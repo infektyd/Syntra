@@ -1,25 +1,14 @@
 import Vapor
-// configures your application
-public func configure(_ app: Application) async throws {
-    // uncomment to serve files from /Public folder
-    // app.middleware.use(FileMiddleware(publicDirectory: app.directory.publicDirectory))
 
-    // Configure CORS
-    let corsConfiguration = CORSMiddleware.Configuration(
-        allowedOrigin: .all,
-        allowedMethods: [.GET, .POST, .OPTIONS],
-        allowedHeaders: [.accept, .authorization, .contentType, .origin, .xRequestedWith, .userAgent, .accessControlAllowOrigin]
-    )
-    let cors = CORSMiddleware(configuration: corsConfiguration)
-    app.middleware.use(cors, at: .beginning)
-
-    // Add custom logging middleware
-    app.middleware.use(LoggingMiddleware())
-
-    // Configure server port and body size limit
+public func configure(_ app: Application) throws {
+    // Configure the server address
+    app.http.server.configuration.hostname = "127.0.0.1"
     app.http.server.configuration.port = 8081
-    app.routes.defaultMaxBodySize = "5mb"
 
-    // Register routes
+    // Request logging (env-gated)
+    if Environment.get("LOG_REQUEST_BODIES") == "1" {
+        app.middleware.use(RequestBodyLoggerMiddleware())
+    }
+    // ... existing config ...
     try routes(app)
 }

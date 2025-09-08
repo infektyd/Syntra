@@ -1,0 +1,18 @@
+model: openai/syntra-consciousness
+openai-api-base: http://127.0.0.1:8081
+openai-api-key: syntra-local
+
+# prevent calls that can hit unimplemented endpoints
+map-refresh: manual
+map-tokens: 0
+analytics: false
+show-model-warnings: false
+
+auto-commits: false
+edit-format: whole
+show-diffs: true
+
+
+# 5) Optional model metadata to avoid context warnings
+model-metadata-file: aider-models/openai/syntra-consciousness.json
+

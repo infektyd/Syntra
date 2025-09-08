@@ -137,3 +137,17 @@ archived_tests/*.rtf
 ######################################
 *.pdf
 .aider*
+
+# Gemini CLI files
+.GEMINI.MD
+
+# Other AI tool configs
+.claude/
+.grok/
+
+# Prompt-based documentation
+Documentation/implementation_plan.md
+Documentation/implementation_plan 2.md
+Documentation/upgrade to be applied.md
+Documentation/BUILD_FIX_COMPLETION_SUMMARY.md
+.env
