@@ -155,7 +155,7 @@ public final class BrainCore: Sendable {
         
         🔬 Logical Analysis (\(Int(logicalWeight * 100))%): \(logicalResponse.reasoningPatterns.joined(separator: ", "))
         
-        ⚖️ Synthesized Response: Based on both moral and logical considerations, I understand your input and am here to help in a thoughtful, ethical manner.
+        ⚖️ Synthesized Response: Based on both moral and logical considerations, I understand your input and am here to help.
         """
     }
 }

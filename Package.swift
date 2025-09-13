@@ -117,7 +117,10 @@ let package = Package(
             dependencies: [
                 "SyntraCore",
                 "ConversationalInterface",
-                "SyntraTools"
+                "SyntraTools",
+                "BrainEngine",
+                "Valon",
+                "Modi"
             ],
             path: "Sources/SyntraKit"
         ),

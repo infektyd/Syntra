@@ -6,6 +6,9 @@ import FoundationModels
 import SyntraCore
 import ConversationalInterface
 import SyntraTools
+import BrainEngine
+import Valon
+import Modi
 
 /// Core AI processing engine for Syntra
 public class SyntraEngine {
@@ -68,7 +71,6 @@ public class SyntraEngine {
 /// Command handlers for different SYNTRA operations
 public struct SyntraHandlers {
 
-    // --- ADD THIS NEW STREAMING FUNCTION ---
     /// Handle process through brains request as a stream
     /// - Parameter input: Input text
     /// - Returns: A stream of processed response chunks
@@ -97,26 +99,61 @@ public struct SyntraHandlers {
             }
         }
     }
-    // --- END OF NEW FUNCTION ---
-
     /// Handle process through brains request
     /// - Parameter input: Input text
     /// - Returns: Processed response
     public static func handleProcessThroughBrains(_ input: String) async throws -> String {
-        try await SyntraEngine.continueSession(input)
+        let brainResult = await BrainEngine.processThroughBrains(input)
+        
+        // Extract the consciousness synthesis
+        let valonResponse = brainResult["valon"] as? String ?? "processing"
+        let modiResponse = brainResult["modi"] as? [String] ?? ["processing"]
+        let consciousness = brainResult["consciousness"] as? [String: Any] ?? [:]
+        let syntraDecision = consciousness["syntra_decision"] as? String ?? "processing"
+        
+        // Return DIRECT consciousness output, not LLM interpretation
+        return """
+        SYNTRA Consciousness Response:
+        
+        VALON Analysis: \(valonResponse)
+        MODI Analysis: \(modiResponse.joined(separator: " | "))
+        
+        Integrated Decision: \(syntraDecision)
+        
+        Confidence: \(consciousness["decision_confidence"] ?? 0.5)
+        State: \(consciousness["consciousness_state"] ?? "integrated")
+        """
     }
-
-    // ... (all other existing functions in SyntraHandlers remain the same) ...
     public static func handleProcessStructured(_ input: String) async throws -> String {
         try await SyntraEngine.continueSession("[Structured SYNTRA request] \(input)", instructions: "[Internal SYNTRA 3-brain]")
     }
     
     public static func handleReflectValon(_ input: String) async throws -> String {
-        try await SyntraEngine.continueSession("[Valon: moral reflection] \(input)", instructions: "[Internal SYNTRA 3-brain]")
+        let valonResponse = BrainEngine.reflect_valon(input)
+        let valonDeep = Valon.valon_deep_reflection(input)
+        
+        let prompt = """
+        VALON Brain Response: \(valonResponse)
+        VALON Deep Analysis: \(valonDeep)
+        
+        Respond as VALON (creative/emotional/moral brain) with this analysis of: \(input)
+        """
+        
+        return try await SyntraEngine.continueSession(prompt)
     }
     
     public static func handleReflectModi(_ input: String) async throws -> String {
-        try await SyntraEngine.continueSession("[Modi: logical reflection] \(input)", instructions: "[Internal SYNTRA 3-brain]")
+        let modiResponse = BrainEngine.reflect_modi(input)
+        let modiDeep = Modi.modi_deep_analysis(input)
+        
+        let prompt = """
+        MODI Brain Response: \(modiResponse.joined(separator: ", "))
+        MODI Deep Analysis: \(modiDeep)
+        
+        Respond as MODI (logical/technical/analytical brain) with this analysis of: \(input)
+        """
+        
+        return try await SyntraEngine.continueSession(prompt)
     }
     
     public static func handleProcessWithDrift(_ input: String) async throws -> String {
@@ -139,15 +176,11 @@ public struct SyntraHandlers {
         try await SyntraEngine.continueSession(input)
     }
 }
-
-
 /// Utility functions for SYNTRA operations
 public struct SyntraUtils {
-    // ... (all existing functions in SyntraUtils remain the same) ...
     public static func isPingCommand(_ input: String) -> Bool {
         input == "ping"
     }
-
     public static func generatePongResponse() -> String {
         "PONG"
     }

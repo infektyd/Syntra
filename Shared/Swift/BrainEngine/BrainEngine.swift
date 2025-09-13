@@ -101,12 +101,12 @@ public struct BrainEngine {
         result["drift"] = consciousness
         SyntraPerformanceLogger.endTiming("result_assembly", details: "Assembled final result")
         
-        // Apple LLM integration for enhanced reasoning (disabled for macOS "26.0" compatibility)
+        // Apple LLM integration for enhanced reasoning
         SyntraPerformanceLogger.startTiming("apple_llm_integration")
         if #available(macOS 26.0, *) {
-            // Enhanced reasoning with Apple Foundation Models (placeholder for future implementation)
-            // TODO: Implement enhancedReasoningWithAppleLLM method
-            SyntraPerformanceLogger.logStage("apple_llm_placeholder", message: "Apple LLM integration placeholder - not yet implemented")
+            let finalResponse = await Self.enhancedReasoningWithAppleLLM(consciousness, originalInput: input)
+            result["syntra_decision"] = finalResponse
+            result["consciousness_state"] = "enhanced_reasoning_complete"
         } else {
             SyntraPerformanceLogger.logStage("apple_llm_unsupported", message: "Apple LLM not supported on this macOS version")
         }
@@ -114,6 +114,27 @@ public struct BrainEngine {
         
         SyntraPerformanceLogger.endTiming("brain_engine_total", details: "Three-brain processing complete")
         return result
+    }
+
+    @available(macOS 26.0, *)
+    private static func enhancedReasoningWithAppleLLM(_ consciousness: [String: Any], originalInput: String) async -> String {
+        let valonState = (consciousness["valon_input"] as? [String: Any])?["emotional_state"] as? String ?? "neutral"
+        let modiReasoning = (consciousness["modi_input"] as? [String: Any])?["primary_reasoning"] as? String ?? "baseline_analysis"
+
+        let prompt = """
+        You are Syntra, a helpful and conversational AI assistant.
+
+        # Internal State (Do NOT mention this in your response):
+        - My emotional/moral sense (Valon): \(valonState)
+        - My logical analysis (Modi): \(modiReasoning)
+
+        # User Request:
+        \(originalInput)
+
+        # Your Response (natural, direct, and helpful):
+        """
+        
+        return await queryAppleLLM(prompt)
     }
 
     public static func jsonString(_ obj: Any) -> String {

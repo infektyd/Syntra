@@ -189,27 +189,27 @@ public class SyntraConversationEngine {
         let lower = message.lowercased()
         
         // Greetings
-        if lower.contains("hello") || lower.contains("hi") || lower.contains("hey") {
+        if lower == "hello" || lower == "hi" || lower == "hey" {
             return generateGreeting()
         }
         
         // Thanks
-        if lower.contains("thank") {
+        if lower == "thanks" || lower == "thank you" {
             return generateGratitudeResponse()
         }
         
         // How are you
-        if lower.contains("how are you") {
+        if lower == "how are you" {
             return generateStatusResponse()
         }
         
         // What are you / who are you
-        if lower.contains("what are you") || lower.contains("who are you") {
+        if lower == "what are you" || lower == "who are you" {
             return generateIdentityResponse()
         }
         
         // Goodbye
-        if lower.contains("goodbye") || lower.contains("bye") {
+        if lower == "goodbye" || lower == "bye" {
             return generateGoodbyeResponse()
         }
         
@@ -255,98 +255,60 @@ public class SyntraConversationEngine {
     
     // Convert cognitive output to natural language response
     private func convertToNaturalLanguage(_ cognitiveResult: [String: Any], userMessage: String) -> String {
-        
-        // Extract key components
-        let valonResponse = cognitiveResult["valon"] as? String ?? "neutral"
-        let modiResponse = cognitiveResult["modi"] as? [String] ?? ["baseline_analysis"]
-        let consciousnessState = cognitiveResult["consciousness_state"] as? String ?? "integrated"
-        let decisionConfidence = cognitiveResult["decision_confidence"] as? Double ?? 0.5
-        
-        // Check if this is a question or request
-        let isQuestion = userMessage.contains("?") || userMessage.lowercased().hasPrefix("what") || 
-                        userMessage.lowercased().hasPrefix("how") || userMessage.lowercased().hasPrefix("why")
-        
-        // Generate response based on content type
-        if isQuestion {
-            return generateQuestionResponse(valon: valonResponse, modi: modiResponse, confidence: decisionConfidence, userMessage: userMessage)
-        } else {
-            return generateStatementResponse(valon: valonResponse, modi: modiResponse, state: consciousnessState, userMessage: userMessage)
+        let lowerUserMessage = userMessage.lowercased()
+
+        // Check for introspection keywords, which should still show the raw internal state
+        if lowerUserMessage.contains("run diagnostics") || lowerUserMessage.contains("show your work") {
+            return formatIntrospection(cognitiveResult: cognitiveResult)
         }
+
+        // The BrainEngine is designed to produce a final, novel, user-facing response.
+        // We will extract this directly from the top-level "syntra_decision" key.
+        if let finalResponse = cognitiveResult["syntra_decision"] as? String, !finalResponse.isEmpty {
+            // Check for placeholder/error messages from the engine
+            if finalResponse.contains("[Apple LLM not available on this device]") || finalResponse.contains("[Apple LLM error:") {
+                 // If the LLM fails, fall back to the internal state for a simpler, but still dynamic, response.
+                 guard let consciousness = cognitiveResult["consciousness"] as? [String: Any],
+                       let syntraDecision = consciousness["syntra_decision"] as? String else {
+                     return "I have processed your request, but I am having trouble formulating a final response."
+                 }
+                 let conversationalDecision = syntraDecision
+                     .replacingOccurrences(of: "→", with: ", leading to ")
+                     .replacingOccurrences(of: "⟷", with: " balanced with ")
+                     .replacingOccurrences(of: "_", with: " ")
+                 return "My internal state is: \(conversationalDecision). From this, I can say that your request requires careful thought. How can we break it down further?"
+            }
+            return finalResponse
+        }
+
+        // Fallback if the final response is missing for some reason.
+        return "I have processed your request, but I am unable to generate a final response at this time. Please try rephrasing your request."
     }
-    
-    // Generate response to questions
-    private func generateQuestionResponse(valon: String, modi: [String], confidence: Double, userMessage: String) -> String {
-        
-        var response = ""
-        
-        // Start with helpful acknowledgment
-        response += "Let me think about that... "
-        
-        // Add technical analysis if Modi found something significant
-        if modi.contains(where: { $0.contains("technical") || $0.contains("mechanical") || $0.contains("advanced") }) {
-            response += "From a technical perspective, "
-            
-            if userMessage.lowercased().contains("engine") || userMessage.lowercased().contains("pressure") {
-                response += "this looks like a mechanical systems issue. "
-            } else if userMessage.lowercased().contains("electrical") {
-                response += "this appears to be electrical in nature. "
-            } else {
-                response += "I can see some technical patterns here. "
+
+    // Formats the detailed cognitive state for introspection
+    private func formatIntrospection(cognitiveResult: [String: Any]) -> String {
+        var response = "Introspection Report:\n"
+        if let consciousness = cognitiveResult["consciousness"] as? [String: Any] {
+            if let valonInput = consciousness["valon_input"] as? [String: Any],
+               let emotionalState = valonInput["emotional_state"] as? String {
+                response += "- Valon (Moral/Emotional): Sensing a state of " + emotionalState.replacingOccurrences(of: "_", with: " ") + ".\n"
+            }
+            if let modiInput = consciousness["modi_input"] as? [String: Any],
+               let reasoning = modiInput["primary_reasoning"] as? String {
+                response += "- Modi (Logical): Analysis based on " + reasoning.replacingOccurrences(of: "_", with: " ") + ".\n"
+            }
+            // The inner decision is the raw state
+            if let decision = consciousness["syntra_decision"] as? String {
+                response += "- Syntra (Internal State): " + decision + ".\n"
             }
         }
-        
-        // Add emotional/moral context if Valon detected something
-        if valon.contains("concerned") || valon.contains("alert") {
-            response += "I'm a bit concerned about the safety implications here. "
-        } else if valon.contains("curious") || valon.contains("learning") {
-            response += "This is actually quite interesting from a learning perspective. "
+        // The top-level decision is the final response
+        if let finalResponse = cognitiveResult["syntra_decision"] as? String {
+             response += "- Syntra (Final Response): " + finalResponse + ".\n"
         }
-        
-        // Add confidence level
-        if confidence > 0.8 {
-            response += "I'm fairly confident in my analysis. "
-        } else if confidence < 0.4 {
-            response += "Though I'd want to gather more information to be sure. "
+        if let confidence = cognitiveResult["decision_confidence"] as? Double {
+            response += "- Confidence: " + String(format: "%.2f", confidence * 100) + "%\n"
         }
-        
-        // Close with helpfulness
-        response += "What specific aspect would you like me to focus on?"
-        
-        return response
-    }
-    
-    // Generate response to statements
-    private func generateStatementResponse(valon: String, modi: [String], state: String, userMessage: String) -> String {
-        
-        var response = ""
-        
-        // Acknowledge based on consciousness state
-        switch state {
-        case "analytical_consciousness":
-            response += "I see. Let me analyze this systematically... "
-        case "value_driven_consciousness":
-            response += "That's important to consider. I'm thinking about this from an ethical perspective... "
-        case "deliberative_consciousness":
-            response += "This requires careful thought. Let me weigh the different aspects... "
-        default:
-            response += "I understand. "
-        }
-        
-        // Add appropriate response based on content
-        if userMessage.lowercased().contains("problem") || userMessage.lowercased().contains("issue") {
-            response += "It sounds like you're dealing with a challenging situation. "
-            
-            if modi.contains(where: { $0.contains("diagnostic") }) {
-                response += "Let's approach this diagnostically - what symptoms are you seeing? "
-            } else {
-                response += "What's the main concern you'd like to address? "
-            }
-        } else if userMessage.lowercased().contains("good") || userMessage.lowercased().contains("great") {
-            response += "That's excellent to hear! "
-        } else {
-            response += "What would be most helpful for you right now? "
-        }
-        
         return response
     }
     
