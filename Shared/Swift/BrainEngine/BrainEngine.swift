@@ -13,6 +13,11 @@ import SyntraTools
 public struct BrainEngine {
     public init() {}
     
+    // MARK: - Verbose LLM Logging Configuration
+    /// Toggle for detailed Apple LLM conversation logging
+    /// Enable with: SYNTRA_VERBOSE_LLM=true swift run
+    private static let isVerboseLLMLoggingEnabled = ProcessInfo.processInfo.environment["SYNTRA_VERBOSE_LLM"] == "true"
+    
     /// Log processing stage to entropy/drift logs
     public static func logStage(stage: String, output: Any, directory: String) {
         let fm = FileManager.default
@@ -416,20 +421,41 @@ public struct BrainEngine {
     
     @available(macOS 26.0, *)
     public static func queryAppleLLM(_ prompt: String) async -> String {
+        // MARK: - Verbose LLM Logging: Log prompt before sending
+        if isVerboseLLMLoggingEnabled {
+            print("🔍 [LLM_PROMPT] Sent to Apple LLM:")
+            print("📤 Prompt: \(prompt)")
+            print("---")
+        }
+        
         do {
             let model = SystemLanguageModel.default
             guard model.availability == .available else {
                 let msg = "[Apple LLM not available on this device]"
+                if isVerboseLLMLoggingEnabled {
+                    print("🔍 [LLM_RESPONSE] Apple LLM unavailable: \(msg)")
+                }
                 Self.logStage(stage: "apple_llm", output: ["prompt": prompt, "response": msg], directory: "entropy_logs")
                 return msg
             }
             
             let session = LanguageModelSession(model: model)
             let response = try await session.respond(to: prompt)
+            
+            // MARK: - Verbose LLM Logging: Log response after receiving
+            if isVerboseLLMLoggingEnabled {
+                print("🔍 [LLM_RESPONSE] Received from Apple LLM:")
+                print("📥 Response: \(response.content)")
+                print("===\n")
+            }
+            
             Self.logStage(stage: "apple_llm", output: ["prompt": prompt, "response": response.content], directory: "entropy_logs")
             return response.content
         } catch {
             let msg = "[Apple LLM error: \(error.localizedDescription)]"
+            if isVerboseLLMLoggingEnabled {
+                print("🔍 [LLM_RESPONSE] Apple LLM error: \(msg)")
+            }
             Self.logStage(stage: "apple_llm", output: ["prompt": prompt, "response": msg], directory: "entropy_logs")
             return msg
         }
