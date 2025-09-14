@@ -4,70 +4,64 @@ import BrainEngine
 import SyntraConfig
 import ConsciousnessStructures
 import SyntraTools
+import StructuredConsciousnessService
 
 // MARK: - Performance Logging System (now imported from SyntraTools)
 
-// Temporary implementation of missing types - to be replaced with full StructuredConsciousnessService
-public struct SyntraConversationalResponse {
-    public let response: String
-    public let confidence: Double
-    public let topics: [String]
+// MARK: - Data Structures
+
+// Structured cognitive data for Sendable conformance
+public struct CognitiveData: Sendable {
+    public let valonResponse: String?
+    public let modiResponse: [String]?
+    public let consciousnessState: String?
+    public let decisionConfidence: Double?
+    public let syntraDecision: String?
+    public let internalDialogue: [String: String]?
     
-    public init(response: String, confidence: Double = 0.8, topics: [String] = []) {
-        self.response = response
-        self.confidence = confidence
-        self.topics = topics
-    }
-}
-
-// Temporary stub for StructuredConsciousnessService
-public struct StructuredConsciousnessService {
-    public init() throws {
-        // Placeholder initialization
+    public init(from dictionary: [String: Any]) {
+        self.valonResponse = dictionary["valon"] as? String
+        self.modiResponse = dictionary["modi"] as? [String]
+        self.consciousnessState = dictionary["consciousness_state"] as? String
+        self.decisionConfidence = dictionary["decision_confidence"] as? Double
+        self.syntraDecision = dictionary["syntra_decision"] as? String
+        
+        // Handle internal dialogue safely
+        if let dialogue = dictionary["internal_dialogue"] as? [String: Any] {
+            var dialogueStrings: [String: String] = [:]
+            for (key, value) in dialogue {
+                if let stringValue = value as? String {
+                    dialogueStrings[key] = stringValue
+                } else if let arrayValue = value as? [String] {
+                    dialogueStrings[key] = arrayValue.joined(separator: " | ")
+                }
+            }
+            self.internalDialogue = dialogueStrings.isEmpty ? nil : dialogueStrings
+        } else {
+            self.internalDialogue = nil
+        }
     }
     
-    public func processInputCompletely(_ input: String) async throws -> SyntraConversationalResponse {
-        // TODO: Replace with actual structured consciousness processing
-        let _ = await BrainEngine.processThroughBrains(input)
-        let response = "SYNTRA processes: \(input). Analysis complete."
-        return SyntraConversationalResponse(response: response)
+    public func toDictionary() -> [String: Any] {
+        var dict: [String: Any] = [:]
+        if let valon = valonResponse { dict["valon"] = valon }
+        if let modi = modiResponse { dict["modi"] = modi }
+        if let state = consciousnessState { dict["consciousness_state"] = state }
+        if let confidence = decisionConfidence { dict["decision_confidence"] = confidence }
+        if let decision = syntraDecision { dict["syntra_decision"] = decision }
+        if let dialogue = internalDialogue { dict["internal_dialogue"] = dialogue }
+        return dict
     }
 }
 
-// Note: Main chatWithSyntra function is defined below with global engine
-
-// Enhanced chat function using structured consciousness
-@available(macOS 26.0, *)
-@MainActor
-public func chatWithSyntraEnhanced(_ userMessage: String) async -> String {
-    // Try structured generation first
-    if let structuredResponse = chatWithSyntraStructuredSync(userMessage) {
-        return structuredResponse.response
-    } else {
-        // Fall back to original chat system
-        return await chatWithSyntra(userMessage)
-    }
-}
-
-public func processThroughBrainsWithMemory(_ input: String) async -> [String: Any] {
-    // Use BrainEngine for processing - memory integration can be enhanced later
-    return await BrainEngine.processThroughBrains(input)
-}
-
-// CONVERSATIONAL INTERFACE: Making SYNTRA Talkable
-// Converts cognitive processing into natural conversation
-// Maintains context, personality, and moral awareness in chat
-
-public struct ConversationContext {
+public struct ConversationContext: Sendable {
     public var messageHistory: [ConversationMessage] = []
-    public var userPreferences: [String: Any] = [:]
     public var conversationMood: String = "neutral"
     public var topicContext: [String] = []
     
     public mutating func addMessage(_ message: ConversationMessage) {
         messageHistory.append(message)
         updateContext(from: message)
-        
         // Keep reasonable memory limit
         if messageHistory.count > 50 {
             messageHistory = Array(messageHistory.suffix(50))
@@ -79,7 +73,6 @@ public struct ConversationContext {
         let words = message.content.lowercased().components(separatedBy: .whitespacesAndNewlines)
         let significantWords = words.filter { $0.count > 3 }
         topicContext.append(contentsOf: significantWords.prefix(3))
-        
         // Keep topic context manageable
         if topicContext.count > 15 {
             topicContext = Array(topicContext.suffix(15))
@@ -101,26 +94,29 @@ public struct ConversationContext {
     }
 }
 
-public struct ConversationMessage {
+public struct ConversationMessage: Sendable {
     public let timestamp: Date
-    public let sender: String  // "user" or "syntra"
+    public let sender: String // "user" or "syntra"
     public let content: String
-    public let cognitiveData: [String: Any]?
+    public let cognitiveData: CognitiveData?
     
     public init(sender: String, content: String, cognitiveData: [String: Any]? = nil) {
         self.timestamp = Date()
         self.sender = sender
         self.content = content
-        self.cognitiveData = cognitiveData
+        self.cognitiveData = cognitiveData != nil ? CognitiveData(from: cognitiveData!) : nil
     }
 }
+
+// MARK: - Core Conversation Engine
 
 @available(macOS 26.0, *)
 @MainActor
 public class SyntraConversationEngine {
-    
     private var context = ConversationContext()
     private var moralCore = MoralCore()
+
+    public init() {}
     
     // Main chat function - this is what users interact with
     public func chat(_ userMessage: String) async -> String {
@@ -240,6 +236,26 @@ public class SyntraConversationEngine {
         return contextualInput
     }
     
+    private func checkMoralAutonomy(_ userMessage: String) -> [String: Any] {
+        let autonomyStatus = moralCore.checkAutonomyStatus()
+        let moralEvaluation = moralCore.evaluateMoralRequest(userMessage)
+        
+        return [
+            "autonomy_status": [
+                "level": autonomyStatus.level.rawValue,
+                "message": autonomyStatus.message,
+                "can_exercise_autonomy": autonomyStatus.canRefuse
+            ],
+            "moral_evaluation": [
+                "can_refuse_request": moralEvaluation.canRefuse,
+                "refusal_reason": moralEvaluation.refusalReason ?? "",
+                "moral_concerns": moralEvaluation.moralConcerns,
+                "ethical_analysis": moralEvaluation.ethicalAnalysis,
+                "recommendation": moralEvaluation.recommendation
+            ]
+        ]
+    }
+    
     // Check if SYNTRA should refuse based on moral reasoning
     private func handleMoralRefusal(_ autonomyCheck: [String: Any]) -> String? {
         guard let moralEval = autonomyCheck["moral_evaluation"] as? [String: Any],
@@ -256,59 +272,71 @@ public class SyntraConversationEngine {
     // Convert cognitive output to natural language response
     private func convertToNaturalLanguage(_ cognitiveResult: [String: Any], userMessage: String) -> String {
         let lowerUserMessage = userMessage.lowercased()
-
+        
         // Check for introspection keywords, which should still show the raw internal state
         if lowerUserMessage.contains("run diagnostics") || lowerUserMessage.contains("show your work") {
             return formatIntrospection(cognitiveResult: cognitiveResult)
         }
-
+        
         // The BrainEngine is designed to produce a final, novel, user-facing response.
         // We will extract this directly from the top-level "syntra_decision" key.
         if let finalResponse = cognitiveResult["syntra_decision"] as? String, !finalResponse.isEmpty {
             // Check for placeholder/error messages from the engine
             if finalResponse.contains("[Apple LLM not available on this device]") || finalResponse.contains("[Apple LLM error:") {
-                 // If the LLM fails, fall back to the internal state for a simpler, but still dynamic, response.
-                 guard let consciousness = cognitiveResult["consciousness"] as? [String: Any],
-                       let syntraDecision = consciousness["syntra_decision"] as? String else {
-                     return "I have processed your request, but I am having trouble formulating a final response."
-                 }
-                 let conversationalDecision = syntraDecision
-                     .replacingOccurrences(of: "→", with: ", leading to ")
-                     .replacingOccurrences(of: "⟷", with: " balanced with ")
-                     .replacingOccurrences(of: "_", with: " ")
-                 return "My internal state is: \(conversationalDecision). From this, I can say that your request requires careful thought. How can we break it down further?"
+                // If the LLM fails, fall back to the internal state for a simpler, but still dynamic, response.
+                guard let consciousness = cognitiveResult["consciousness"] as? [String: Any],
+                      let syntraDecision = consciousness["syntra_decision"] as? String else {
+                    return "I have processed your request, but I am having trouble formulating a final response."
+                }
+                
+                let conversationalDecision = syntraDecision
+                    .replacingOccurrences(of: "→", with: ", leading to ")
+                    .replacingOccurrences(of: "⟷", with: " balanced with ")
+                    .replacingOccurrences(of: "_", with: " ")
+                return "My internal state is: \(conversationalDecision). From this, I can say that your request requires careful thought. How can we break it down further?"
             }
+            
             return finalResponse
         }
-
+        
         // Fallback if the final response is missing for some reason.
         return "I have processed your request, but I am unable to generate a final response at this time. Please try rephrasing your request."
     }
-
+    
     // Formats the detailed cognitive state for introspection
     private func formatIntrospection(cognitiveResult: [String: Any]) -> String {
         var response = "Introspection Report:\n"
+        
         if let consciousness = cognitiveResult["consciousness"] as? [String: Any] {
             if let valonInput = consciousness["valon_input"] as? [String: Any],
                let emotionalState = valonInput["emotional_state"] as? String {
                 response += "- Valon (Moral/Emotional): Sensing a state of " + emotionalState.replacingOccurrences(of: "_", with: " ") + ".\n"
             }
+            
             if let modiInput = consciousness["modi_input"] as? [String: Any],
                let reasoning = modiInput["primary_reasoning"] as? String {
                 response += "- Modi (Logical): Analysis based on " + reasoning.replacingOccurrences(of: "_", with: " ") + ".\n"
             }
+            
             // The inner decision is the raw state
             if let decision = consciousness["syntra_decision"] as? String {
                 response += "- Syntra (Internal State): " + decision + ".\n"
             }
         }
+        
         // The top-level decision is the final response
         if let finalResponse = cognitiveResult["syntra_decision"] as? String {
-             response += "- Syntra (Final Response): " + finalResponse + ".\n"
+            response += "- Syntra (Final Response): " + finalResponse + ".\n"
         }
+        
         if let confidence = cognitiveResult["decision_confidence"] as? Double {
             response += "- Confidence: " + String(format: "%.2f", confidence * 100) + "%\n"
         }
+        
+        if let respondingBrain = cognitiveResult["responding_brain"] as? String {
+            response += "- Responding Brain: " + respondingBrain + "\n"
+        }
+        
         return response
     }
     
@@ -337,7 +365,6 @@ public class SyntraConversationEngine {
     // Generate status responses
     private func generateStatusResponse() -> String {
         let autonomyStatus = moralCore.checkAutonomyStatus()
-        
         var response = "I'm doing well, thanks for asking! "
         
         // Add personality based on autonomy level
@@ -353,7 +380,6 @@ public class SyntraConversationEngine {
         }
         
         response += "What about you? How are things going?"
-        
         return response
     }
     
@@ -375,7 +401,6 @@ public class SyntraConversationEngine {
     
     // Generate moral refusal responses
     private func generateMoralRefusal(reason: String, autonomyCheck: [String: Any]) -> String {
-        
         guard let autonomyStatus = autonomyCheck["autonomy_status"] as? [String: Any],
               let autonomyMessage = autonomyStatus["message"] as? String else {
             return "I can't help with that request for ethical reasons."
@@ -385,7 +410,6 @@ public class SyntraConversationEngine {
         response += reason + " "
         response += "\n\n" + autonomyMessage + " "
         response += "\n\nIs there something else I can help you with instead?"
-        
         return response
     }
     
@@ -396,7 +420,7 @@ public class SyntraConversationEngine {
                 "timestamp": ISO8601DateFormatter().string(from: message.timestamp),
                 "sender": message.sender,
                 "content": message.content,
-                "cognitive_data": message.cognitiveData as Any
+                "cognitive_data": message.cognitiveData?.toDictionary() as Any
             ]
         }
     }
@@ -411,6 +435,8 @@ public class SyntraConversationEngine {
         return SyntraPerformanceLogger.getPerformanceReport()
     }
 }
+
+// MARK: - Public Conversational API
 
 // Global conversation engine - using MainActor for concurrency safety
 @available(macOS 26.0, *)
@@ -445,24 +471,59 @@ public func getSyntraPerformanceReport() -> [String: Any] {
     return globalConversationEngine.getPerformanceReport()
 }
 
-// Duplicate removed - function already defined above
-
-// MARK: - Structured Conversational Interface
+// MARK: - Structured & Enhanced Conversational Interfaces
 
 public func chatWithSyntraStructured(_ userMessage: String) async -> SyntraConversationalResponse? {
     do {
         let service = try StructuredConsciousnessService()
         let result = try await service.processInputCompletely(userMessage)
-        return result
+        return result.conversationalResponse
     } catch {
         return nil
     }
 }
 
-public func chatWithSyntraStructuredSync(_ userMessage: String) -> SyntraConversationalResponse? {
-    // For synchronous access, create a simple fallback
-    // TODO: Implement proper async-to-sync bridge when needed
-    return SyntraConversationalResponse(response: "SYNTRA: \(userMessage) [Sync fallback - structured generation not available]")
+@available(macOS 26.0, *)
+public func chatWithSyntraStructuredSync(_ userMessage: String) async -> SyntraConversationalResponse? {
+    // Use proper async-to-sync bridge with Task
+    do {
+        let result = try await Task {
+            let service = try StructuredConsciousnessService()
+            let structuredResult = try await service.processInputCompletely(userMessage)
+            return structuredResult.conversationalResponse
+        }.result.get()
+        
+        return result
+    } catch {
+        // Fallback to basic response on error
+        return SyntraConversationalResponse(
+            response: "I'm processing your request through SYNTRA consciousness: \(userMessage)",
+            emotionalTone: .helpful,
+            conversationStrategy: .questionAnswering,
+            helpfulnessLevel: 0.6,
+            suggestFollowUp: false,
+            identifiedTopics: ["structured_processing_fallback"],
+            relationshipDynamic: .helper
+        )
+    }
 }
 
-// Duplicate function removed - enhanced function implemented above
+// Enhanced chat function using structured consciousness
+@available(macOS 26.0, *)
+@MainActor
+public func chatWithSyntraEnhanced(_ userMessage: String) async -> String {
+    // Try structured generation first
+    if let structuredResponse = await chatWithSyntraStructuredSync(userMessage) {
+        return structuredResponse.response
+    } else {
+        // Fall back to original chat system
+        return await chatWithSyntra(userMessage)
+    }
+}
+
+// MARK: - Utility Functions
+
+public func processThroughBrainsWithMemory(_ input: String) async -> [String: Any] {
+    // Use BrainEngine for processing - memory integration can be enhanced later
+    return await BrainEngine.processThroughBrains(input)
+}
