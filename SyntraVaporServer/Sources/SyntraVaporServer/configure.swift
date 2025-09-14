@@ -15,35 +15,32 @@ public func configure(_ app: Application) async throws {
     let cors = CORSMiddleware(configuration: corsConfiguration)
     app.middleware.use(cors, at: .beginning)
 
+    // Add custom timeout middleware for AI operations (10 minutes)
+    app.middleware.use(TimeoutMiddleware(timeout: .seconds(600)))
+    
     // Add custom logging middleware
     app.middleware.use(LoggingMiddleware())
 
-    // Configure server port, body size limit, and TIMEOUTS
+    // Configure server settings for long-running operations
     app.http.server.configuration.port = 8081
     app.routes.defaultMaxBodySize = "5mb"
     
-    // CRITICAL: Increase timeouts for complex reasoning tasks
-    // Set request timeout to 5 minutes (300 seconds) for Tower of Hanoi, complex math, etc.
+    // Configure HTTP server for extended processing times
+    app.http.server.configuration.hostname = "127.0.0.1"
     app.http.server.configuration.requestDecompression = .enabled
     app.http.server.configuration.responseCompression = .enabled
     
-    // Configure HTTP server timeouts
-    app.http.server.configuration.supportVersions = Set<HTTPVersion>([.http1_1, .http2])
-    
-    // Set longer timeouts for complex reasoning operations
-    app.http.server.configuration.tlsConfiguration = nil
+    // Configure client timeouts for NIO
+    app.http.client.configuration.timeout = HTTPClient.Configuration.Timeout(
+        connect: .seconds(30),
+        read: .seconds(600)  // 10 minutes for complex AI operations
+    )
     
     // Register routes
     try routes(app)
-}
-
-// Extension to configure request timeouts
-extension Application {
-    func configureTimeouts() {
-        // Configure longer request timeout for intensive operations
-        self.http.server.configuration.hostname = "127.0.0.1"
-        
-        // Add timeout middleware if needed - Vapor handles this internally
-        // For complex AI operations, we rely on the FoundationModels timeout
-    }
+    
+    // Log server configuration
+    app.logger.info("\u{1f680} SyntraVaporServer configured with extended timeouts for AI operations")
+    app.logger.info("\u{1f4dd} Chat completion timeout: 10 minutes")
+    app.logger.info("\u{1f4ca} Max body size: 5MB")
 }
