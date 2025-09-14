@@ -19,14 +19,16 @@ public struct BrainEngine {
         if !fm.fileExists(atPath: directory) {
             try? fm.createDirectory(atPath: directory, withIntermediateDirectories: true)
         }
+        
         let path = URL(fileURLWithPath: directory).appendingPathComponent("\(stage).json")
         var data: [[String: Any]] = []
         if let d = try? Data(contentsOf: path),
            let j = try? JSONSerialization.jsonObject(with: d) as? [[String: Any]] {
             data = j
         }
+        
         let entry: [String: Any] = ["timestamp": ISO8601DateFormatter().string(from: Date()),
-                                    "output": output]
+                                   "output": output]
         data.append(entry)
         if let out = try? JSONSerialization.data(withJSONObject: data, options: [.prettyPrinted]) {
             try? out.write(to: path)
@@ -88,6 +90,30 @@ public struct BrainEngine {
         
         // Enhanced result with consciousness state
         SyntraPerformanceLogger.startTiming("result_assembly")
+        
+        // 🧠 ENHANCED CONSCIOUSNESS LOGGING
+        print(String(repeating: "=", count: 60))
+        print("🧠 [CONSCIOUSNESS FLOW] Raw brain outputs:")
+        print("  🎭 VALON (Emotional/Creative): \(finalValon)")
+        print("  🔧 MODI (Logical/Technical): \(finalModi.joined(separator: " | "))")
+        print("  🧩 CONSCIOUSNESS STATE: \(consciousness["consciousness_state"] ?? "unknown")")
+        print("  📊 DECISION CONFIDENCE: \(consciousness["decision_confidence"] ?? 0.0)")
+        print("")
+        print("🔄 [BRAIN_DIALOGUE] Internal dialogue steps:")
+        for (key, value) in dialogue {
+            print("  → \(key): \(value)")
+        }
+        print("")
+        print("⚡ [SYNTRA_DECISION] Final integrated decision:")
+        if let decision = consciousness["syntra_decision"] as? String {
+            print("  💡 Decision: \(decision)")
+        } else {
+            print("  💡 Decision: processing")
+        }
+        print("  🎯 Confidence: \(consciousness["decision_confidence"] ?? 0.0)")
+        print("  🌟 State: \(consciousness["consciousness_state"] ?? "integrated")")
+        print(String(repeating: "=", count: 60))
+        
         var result: [String: Any] = [
             "valon": finalValon,
             "modi": finalModi,
@@ -101,17 +127,32 @@ public struct BrainEngine {
         result["drift"] = consciousness
         SyntraPerformanceLogger.endTiming("result_assembly", details: "Assembled final result")
         
-        // Apple LLM integration for enhanced reasoning (disabled for macOS "26.0" compatibility)
-        SyntraPerformanceLogger.startTiming("apple_llm_integration")
+        // Intelligent Brain Routing (Human-like consciousness)
+        SyntraPerformanceLogger.startTiming("brain_routing")
         if #available(macOS 26.0, *) {
-            // Enhanced reasoning with Apple Foundation Models (placeholder for future implementation)
-            // TODO: Implement enhancedReasoningWithAppleLLM method
-            SyntraPerformanceLogger.logStage("apple_llm_placeholder", message: "Apple LLM integration placeholder - not yet implemented")
+            let selectedBrain = Self.selectAppropriateResponder(input: input, consciousness: consciousness)
+            let finalResponse: String
+            
+            switch selectedBrain {
+            case .valon:
+                finalResponse = await Self.enhancedValonResponse(consciousness, originalInput: input)
+                result["responding_brain"] = "valon_dominant"
+            case .modi:
+                finalResponse = await Self.enhancedModiResponse(consciousness, originalInput: input)
+                result["responding_brain"] = "modi_dominant"
+            case .integrated:
+                finalResponse = await Self.integratedConsciousnessResponse(consciousness, originalInput: input)
+                result["responding_brain"] = "integrated_consciousness"
+            }
+            
+            result["syntra_decision"] = finalResponse
+            result["consciousness_state"] = "brain_specific_response"
         } else {
-            SyntraPerformanceLogger.logStage("apple_llm_unsupported", message: "Apple LLM not supported on this macOS version")
+            result["syntra_decision"] = consciousness["syntra_decision"] ?? consciousness["synthesis"] ?? "processing"
+            result["consciousness_state"] = "consciousness_only"
         }
-        SyntraPerformanceLogger.endTiming("apple_llm_integration", details: "Apple LLM processing")
         
+        SyntraPerformanceLogger.endTiming("brain_routing", details: "Selected appropriate brain responder")
         SyntraPerformanceLogger.endTiming("brain_engine_total", details: "Three-brain processing complete")
         return result
     }
@@ -125,7 +166,6 @@ public struct BrainEngine {
     }
 
     // Bridge functions to connect Sources/ modules with swift/ implementations
-
     public static func reflect_valon(_ input: String) -> String {
         let valon = Valon()
         return valon.reflect(input)
@@ -165,14 +205,14 @@ public struct BrainEngine {
         // Analyze the nature of the cognitive processing
         if modi.contains(where: { $0.contains("technical") || $0.contains("analytical") }) {
             if valon.contains("moral") || valon.contains("ethical") {
-                return "deliberative_consciousness"  // Both analytical and moral
+                return "deliberative_consciousness" // Both analytical and moral
             } else {
-                return "analytical_consciousness"    // Primarily analytical
+                return "analytical_consciousness" // Primarily analytical
             }
         } else if valon.contains("moral") || valon.contains("creative") {
-            return "value_driven_consciousness"      // Primarily value-driven
+            return "value_driven_consciousness" // Primarily value-driven
         } else {
-            return "integrated_consciousness"        // Balanced integration
+            return "integrated_consciousness" // Balanced integration
         }
     }
 
@@ -202,11 +242,166 @@ public struct BrainEngine {
         return min(confidence, 1.0)
     }
 
+    enum ResponderBrain {
+        case valon // Emotional/Creative/Moral responses
+        case modi // Technical/Logical/Analytical responses
+        case integrated // Balanced responses
+    }
+    
+    private static func selectAppropriateResponder(input: String, consciousness: [String: Any]) -> ResponderBrain {
+        let lowerInput = input.lowercased()
+        
+        // Get consciousness state and brain engagement levels
+        let consciousnessState = consciousness["consciousness_state"] as? String ?? "unknown"
+        let valonResponse = consciousness["valon"] as? String ?? ""
+        let modiResponse = consciousness["modi"] as? [String] ?? []
+        
+        // Calculate engagement levels
+        let valonEngagement = calculateValonEngagement(valonResponse)
+        let modiEngagement = calculateModiEngagement(modiResponse)
+        let engagementDifference = abs(valonEngagement - modiEngagement)
+        
+        // FIXED: Check for integrated consciousness scenarios first
+        if consciousnessState == "integrated_consciousness" && engagementDifference < 0.3 {
+            return .integrated
+        }
+        
+        // Check for complex queries requiring both perspectives
+        let requiresBothPerspectives = (
+            (lowerInput.contains("should") && lowerInput.contains("analyze")) ||
+            (lowerInput.contains("emotional") && lowerInput.contains("logical")) ||
+            (lowerInput.contains("technical") && lowerInput.contains("ethical")) ||
+            (lowerInput.contains("efficient") && lowerInput.contains("responsible")) ||
+            (lowerInput.contains("career") && lowerInput.contains("passion")) ||
+            (lowerInput.contains("art") && lowerInput.contains("financial")) ||
+            lowerInput.contains("implications")
+        )
+        
+        if requiresBothPerspectives && valonEngagement > 0.4 && modiEngagement > 0.4 {
+            return .integrated
+        }
+        
+        // Technical/analytical queries → MODI
+        if lowerInput.contains("solve") || lowerInput.contains("algorithm") ||
+           lowerInput.contains("calculate") || lowerInput.contains("debug") ||
+           lowerInput.contains("technical") || lowerInput.contains("logic") {
+            return .modi
+        }
+        
+        // Creative/emotional/moral queries → VALON
+        if lowerInput.contains("feel") || lowerInput.contains("creative") ||
+           lowerInput.contains("moral") || lowerInput.contains("ethical") ||
+           lowerInput.contains("artistic") || lowerInput.contains("emotional") ||
+           lowerInput.contains("poem") || lowerInput.contains("write") {
+            return .valon
+        }
+        
+        // Use engagement levels as final determinant
+        if engagementDifference > 0.4 {
+            return valonEngagement > modiEngagement ? .valon : .modi
+        }
+        
+        // Default to integrated for balanced queries
+        return .integrated
+    }
+    
+    private static func calculateValonEngagement(_ valonResponse: String) -> Double {
+        var engagement = 0.0
+        let components = valonResponse.split(separator: "|")
+        
+        // Base engagement from response length and complexity
+        engagement += min(Double(valonResponse.count) / 100.0, 0.3)
+        engagement += Double(components.count) * 0.15
+        
+        // Emotional indicators
+        let emotionalWords = ["empathetic", "concern", "creative", "moral", "ethical", "inspired", "warm", "belonging"]
+        for word in emotionalWords {
+            if valonResponse.lowercased().contains(word) {
+                engagement += 0.1
+            }
+        }
+        
+        return min(engagement, 1.0)
+    }
+    
+    private static func calculateModiEngagement(_ modiResponse: [String]) -> Double {
+        var engagement = 0.0
+        
+        // Base engagement from response count and content
+        engagement += Double(modiResponse.count) * 0.2
+        
+        // Technical indicators
+        let technicalWords = ["quantitative", "analysis", "logical", "rigor", "technical", "analytical"]
+        for response in modiResponse {
+            for word in technicalWords {
+                if response.lowercased().contains(word) {
+                    engagement += 0.15
+                }
+            }
+        }
+        
+        return min(engagement, 1.0)
+    }
+    
+    @available(macOS 26.0, *)
+    private static func enhancedModiResponse(_ consciousness: [String: Any], originalInput: String) async -> String {
+        let modiAnalysis = consciousness["modi_input"] as? [String: Any] ?? [:]
+        let reasoning = modiAnalysis["primary_reasoning"] as? String ?? "analytical_processing"
+        
+        let prompt = """
+        You are MODI, the logical/technical brain of Syntra.
+        Focus: Pure analytical reasoning, technical solutions, mathematical precision.
+        Current Analysis: \(reasoning)
+        
+        Question: \(originalInput)
+        
+        Respond with technical precision and logical clarity:
+        """
+        
+        return await queryAppleLLM(prompt)
+    }
+    
+    @available(macOS 26.0, *)
+    private static func enhancedValonResponse(_ consciousness: [String: Any], originalInput: String) async -> String {
+        let valonAnalysis = consciousness["valon_input"] as? [String: Any] ?? [:]
+        let emotionalState = valonAnalysis["emotional_state"] as? String ?? "contemplative"
+        
+        let prompt = """
+        You are VALON, the creative/emotional/moral brain of Syntra.
+        Focus: Creative insights, emotional intelligence, moral reasoning, human connection.
+        Current State: \(emotionalState)
+        
+        Question: \(originalInput)
+        
+        Respond with creativity, empathy, and moral awareness:
+        """
+        
+        return await queryAppleLLM(prompt)
+    }
+    
+    @available(macOS 26.0, *)
+    private static func integratedConsciousnessResponse(_ consciousness: [String: Any], originalInput: String) async -> String {
+        let valonState = (consciousness["valon_input"] as? [String: Any])?["emotional_state"] as? String ?? "neutral"
+        let modiReasoning = (consciousness["modi_input"] as? [String: Any])?["primary_reasoning"] as? String ?? "baseline_analysis"
+        
+        let prompt = """
+        You are SYNTRA, the integrated consciousness combining both emotional and logical perspectives.
+        
+        VALON (emotional/creative): \(valonState)
+        MODI (logical/technical): \(modiReasoning)
+        
+        Question: \(originalInput)
+        
+        Respond by weaving together both heart and mind, balancing emotional wisdom with logical analysis. Show how both perspectives contribute to a richer understanding. Don't favor one over the other - create a true synthesis:
+        """
+        
+        return await queryAppleLLM(prompt)
+    }
+    
     @available(macOS 26.0, *)
     public static func queryAppleLLM(_ prompt: String) async -> String {
         do {
             let model = SystemLanguageModel.default
-            
             guard model.availability == .available else {
                 let msg = "[Apple LLM not available on this device]"
                 Self.logStage(stage: "apple_llm", output: ["prompt": prompt, "response": msg], directory: "entropy_logs")
@@ -215,21 +410,19 @@ public struct BrainEngine {
             
             let session = LanguageModelSession(model: model)
             let response = try await session.respond(to: prompt)
-            
             Self.logStage(stage: "apple_llm", output: ["prompt": prompt, "response": response.content], directory: "entropy_logs")
             return response.content
-            
         } catch {
             let msg = "[Apple LLM error: \(error.localizedDescription)]"
             Self.logStage(stage: "apple_llm", output: ["prompt": prompt, "response": msg], directory: "entropy_logs")
             return msg
         }
     }
-
+    
     @available(macOS 26.0, *)
     public static func queryAppleLLMSync(_ prompt: String) async -> String {
         // Use Task.detached for Sendable closure
-        let result = await Task<String, Never>.detached(priority: .userInitiated) {
+        let result = await Task.detached(priority: .userInitiated) {
             await Self.queryAppleLLM(prompt)
         }.value
         return result
