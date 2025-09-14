@@ -105,11 +105,13 @@ public struct BrainEngine {
         }
         print("")
         print("⚡ [SYNTRA_DECISION] Final integrated decision:")
-        if let decision = consciousness["syntra_decision"] as? String {
-            print("  💡 Decision: \(decision)")
-        } else {
-            print("  💡 Decision: processing")
-        }
+        
+        // FIXED: Extract actual decision from consciousness synthesis
+        let actualDecision = consciousness["syntra_decision"] as? String ?? 
+                           consciousness["converged_state"] as? String ?? 
+                           "decision_synthesis_unavailable"
+        print("  💡 Decision: \(actualDecision)")
+        
         print("  🎯 Confidence: \(consciousness["decision_confidence"] ?? 0.0)")
         print("  🌟 State: \(consciousness["consciousness_state"] ?? "integrated")")
         print(String(repeating: "=", count: 60))
@@ -148,7 +150,10 @@ public struct BrainEngine {
             result["syntra_decision"] = finalResponse
             result["consciousness_state"] = "brain_specific_response"
         } else {
-            result["syntra_decision"] = consciousness["syntra_decision"] ?? consciousness["synthesis"] ?? "processing"
+            // FIXED: Extract the actual synthesized decision from consciousness
+            result["syntra_decision"] = consciousness["syntra_decision"] as? String ?? 
+                                      consciousness["converged_state"] as? String ??
+                                      "consciousness_synthesis_unavailable"
             result["consciousness_state"] = "consciousness_only"
         }
         
@@ -196,7 +201,18 @@ public struct BrainEngine {
         var result = basicDrift
         result["consciousness_state"] = consciousnessState
         result["decision_confidence"] = decisionConfidence
-        result["syntra_decision"] = result["synthesis"] ?? "processing"
+        
+        // FIXED: Properly extract the synthesized decision from Drift output
+        if let synthesizedDecision = result["syntra_decision"] as? String {
+            // Use the actual synthesized decision from Drift
+            result["syntra_decision"] = synthesizedDecision
+        } else if let convergedState = result["converged_state"] as? String {
+            // Fallback to converged_state if available
+            result["syntra_decision"] = convergedState
+        } else {
+            // Last resort: indicate synthesis issue
+            result["syntra_decision"] = "synthesis_processing_error"
+        }
         
         return result
     }
