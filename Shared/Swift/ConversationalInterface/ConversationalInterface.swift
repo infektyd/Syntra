@@ -301,7 +301,7 @@ public class SyntraConversationEngine {
             "autonomy_status": [
                 "level": autonomyStatus.level.rawValue,
                 "message": autonomyStatus.message,
-                "can_exercise_autonomy": autonomyStatus.canExerciseAutonomy
+                "can_exercise_autonomy": autonomyStatus.canRefuse
             ],
             "moral_evaluation": [
                 "can_refuse_request": moralEvaluation.canRefuse,
