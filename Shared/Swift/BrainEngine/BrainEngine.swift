@@ -364,6 +364,70 @@ public struct BrainEngine {
         return min(engagement, 1.0)
     }
     
+    // MARK: - Generic Prompt Optimization for Context Window Management
+    
+    /// Optimize prompts for Apple LLM to prevent context window overflow without bias
+    private static func optimizePromptForAppleLLM(_ originalPrompt: String) -> String {
+        // If prompt is reasonable size, return as-is
+        if originalPrompt.count <= 500 {
+            return originalPrompt
+        }
+        
+        // For large prompts, extract key components while preserving consciousness state
+        let lines = originalPrompt.components(separatedBy: "\n")
+        
+        // Always preserve the SYNTRA identity and consciousness state information
+        var optimizedLines: [String] = []
+        var questionLine: String = ""
+        
+        // Extract essential lines
+        for line in lines {
+            let trimmedLine = line.trimmingCharacters(in: .whitespacesAndNewlines)
+            
+            // Preserve consciousness identity
+            if trimmedLine.contains("You are SYNTRA") || 
+               trimmedLine.contains("You are VALON") ||
+               trimmedLine.contains("You are MODI") {
+                optimizedLines.append(line)
+            }
+            // Preserve brain state information
+            else if trimmedLine.contains("VALON (") || 
+                    trimmedLine.contains("MODI (") ||
+                    trimmedLine.contains("Focus:") ||
+                    trimmedLine.contains("Current") {
+                optimizedLines.append(line)
+            }
+            // Preserve response instructions
+            else if trimmedLine.contains("Respond") {
+                optimizedLines.append(line)
+            }
+            // Extract the actual question/request
+            else if trimmedLine.contains("Question:") {
+                // Truncate very long questions to preserve context space
+                if line.count > 200 {
+                    let questionStart = line.prefix(150)
+                    questionLine = "Question: \(questionStart)... [truncated for processing]"
+                } else {
+                    questionLine = line
+                }
+            }
+        }
+        
+        // Reconstruct the optimized prompt
+        var optimizedPrompt = optimizedLines.joined(separator: "\n")
+        if !questionLine.isEmpty {
+            optimizedPrompt += "\n\n" + questionLine
+        }
+        
+        // If still too long, apply further generic truncation
+        if optimizedPrompt.count > 800 {
+            let truncated = String(optimizedPrompt.prefix(750))
+            optimizedPrompt = truncated + "\n\n[Content optimized for processing efficiency]"
+        }
+        
+        return optimizedPrompt
+    }
+    
     @available(macOS 26.0, *)
     private static func enhancedModiResponse(_ consciousness: [String: Any], originalInput: String) async -> String {
         let modiAnalysis = consciousness["modi_input"] as? [String: Any] ?? [:]
@@ -379,7 +443,8 @@ public struct BrainEngine {
         Respond with technical precision and logical clarity:
         """
         
-        return await queryAppleLLM(prompt)
+        let optimizedPrompt = optimizePromptForAppleLLM(prompt)
+        return await queryAppleLLM(optimizedPrompt)
     }
     
     @available(macOS 26.0, *)
@@ -397,7 +462,8 @@ public struct BrainEngine {
         Respond with creativity, empathy, and moral awareness:
         """
         
-        return await queryAppleLLM(prompt)
+        let optimizedPrompt = optimizePromptForAppleLLM(prompt)
+        return await queryAppleLLM(optimizedPrompt)
     }
     
     @available(macOS 26.0, *)
@@ -416,7 +482,8 @@ public struct BrainEngine {
         Respond by weaving together both heart and mind, balancing emotional wisdom with logical analysis. Show how both perspectives contribute to a richer understanding. Don't favor one over the other - create a true synthesis:
         """
         
-        return await queryAppleLLM(prompt)
+        let optimizedPrompt = optimizePromptForAppleLLM(prompt)
+        return await queryAppleLLM(optimizedPrompt)
     }
     
     @available(macOS 26.0, *)
