@@ -8,6 +8,11 @@ import StructuredConsciousnessService
 
 // MARK: - Performance Logging System (now imported from SyntraTools)
 
+// MARK: - Natural Language Conversion Verbose Logging
+/// Toggle for detailed natural language conversion logging
+/// Enable with: SYNTRA_VERBOSE_NATURAL=true swift run
+private let isVerboseNaturalLoggingEnabled = ProcessInfo.processInfo.environment["SYNTRA_VERBOSE_NATURAL"] == "true"
+
 // MARK: - Structured Conversational Interface
 
 public func chatWithSyntraStructured(_ userMessage: String) async -> SyntraConversationalResponse? {
@@ -324,11 +329,31 @@ public class SyntraConversationEngine {
     
     // Convert cognitive output to natural language response
     private func convertToNaturalLanguage(_ cognitiveResult: [String: Any], userMessage: String) -> String {
+        // MARK: - Verbose Natural Language Logging: Log input cognitive data
+        if isVerboseNaturalLoggingEnabled {
+            print("📝 [NATURAL_INPUT] Raw cognitive data for conversion:")
+            print("   🎭 VALON: \(cognitiveResult["valon"] ?? "none")")
+            print("   🔧 MODI: \(cognitiveResult["modi"] ?? "none")")
+            print("   🧩 Consciousness State: \(cognitiveResult["consciousness_state"] ?? "unknown")")
+            print("   ⚡ Raw Syntra Decision: \(cognitiveResult["syntra_decision"] ?? "none")")
+            print("   📊 Decision Confidence: \(cognitiveResult["decision_confidence"] ?? 0.0)")
+            print("   🧠 Responding Brain: \(cognitiveResult["responding_brain"] ?? "none")")
+            print("---")
+        }
+        
         let lowerUserMessage = userMessage.lowercased()
         
         // Check for introspection keywords, which should still show the raw internal state
         if lowerUserMessage.contains("run diagnostics") || lowerUserMessage.contains("show your work") {
-            return formatIntrospection(cognitiveResult: cognitiveResult)
+            let introspectionResponse = formatIntrospection(cognitiveResult: cognitiveResult)
+            
+            if isVerboseNaturalLoggingEnabled {
+                print("📝 [NATURAL_OUTPUT] Generated introspection response (\(introspectionResponse.count) chars)")
+                print("   📋 Response: \(introspectionResponse.prefix(200))...")
+                print("===\n")
+            }
+            
+            return introspectionResponse
         }
         
         // The BrainEngine is designed to produce a final, novel, user-facing response.
@@ -339,21 +364,54 @@ public class SyntraConversationEngine {
                 // If the LLM fails, fall back to the internal state for a simpler, but still dynamic, response.
                 guard let consciousness = cognitiveResult["consciousness"] as? [String: Any],
                       let syntraDecision = consciousness["syntra_decision"] as? String else {
-                    return "I have processed your request, but I am having trouble formulating a final response."
+                    let fallbackResponse = "I have processed your request, but I am having trouble formulating a final response."
+                    
+                    if isVerboseNaturalLoggingEnabled {
+                        print("📝 [NATURAL_OUTPUT] No consciousness data fallback (\(fallbackResponse.count) chars)")
+                        print("   📋 Response: \(fallbackResponse)")
+                        print("===\n")
+                    }
+                    
+                    return fallbackResponse
                 }
                 
                 let conversationalDecision = syntraDecision
                     .replacingOccurrences(of: "→", with: ", leading to ")
                     .replacingOccurrences(of: "⟷", with: " balanced with ")
                     .replacingOccurrences(of: "_", with: " ")
-                return "My internal state is: \(conversationalDecision). From this, I can say that your request requires careful thought. How can we break it down further?"
+                let dynamicFallbackResponse = "My internal state is: \(conversationalDecision). From this, I can say that your request requires careful thought. How can we break it down further?"
+                
+                if isVerboseNaturalLoggingEnabled {
+                    print("📝 [NATURAL_OUTPUT] Generated dynamic fallback response (\(dynamicFallbackResponse.count) chars)")
+                    print("   🧠 Raw Decision Used: \(syntraDecision)")
+                    print("   📋 Conversational Version: \(conversationalDecision)")
+                    print("   💬 Final Response: \(dynamicFallbackResponse)")
+                    print("===\n")
+                }
+                
+                return dynamicFallbackResponse
+            }
+            
+            // Successful LLM response - return it directly
+            if isVerboseNaturalLoggingEnabled {
+                print("📝 [NATURAL_OUTPUT] Using successful Apple LLM response (\(finalResponse.count) chars)")
+                print("   📋 Response: \(finalResponse.prefix(200))...")
+                print("===\n")
             }
             
             return finalResponse
         }
         
         // Fallback if the final response is missing for some reason.
-        return "I have processed your request, but I am unable to generate a final response at this time. Please try rephrasing your request."
+        let missingResponseFallback = "I have processed your request, but I am unable to generate a final response at this time. Please try rephrasing your request."
+        
+        if isVerboseNaturalLoggingEnabled {
+            print("📝 [NATURAL_OUTPUT] Missing response fallback (\(missingResponseFallback.count) chars)")
+            print("   📋 Response: \(missingResponseFallback)")
+            print("===\n")
+        }
+        
+        return missingResponseFallback
     }
     
     // Formats the detailed cognitive state for introspection
@@ -475,7 +533,7 @@ public class SyntraConversationEngine {
                 "content": message.content,
                 "cognitive_data": message.cognitiveData?.toDictionary() as Any
             ]
-        ]
+        }
     }
     
     // Clear conversation context
