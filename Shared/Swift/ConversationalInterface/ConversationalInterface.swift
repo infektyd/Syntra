@@ -181,12 +181,6 @@ public class SyntraConversationEngine {
         SyntraPerformanceLogger.startTiming("total_chat_processing")
         SyntraPerformanceLogger.logStage("chat_start", message: "Received user message", data: userMessage.prefix(100))
         
-        // Record user message
-        SyntraPerformanceLogger.startTiming("message_recording")
-        let userMsg = ConversationMessage(sender: "user", content: userMessage)
-        context.addMessage(userMsg)
-        SyntraPerformanceLogger.endTiming("message_recording")
-        
         // Check for special conversation patterns
         SyntraPerformanceLogger.startTiming("special_pattern_check")
         if let specialResponse = handleSpecialPatterns(userMessage) {
@@ -199,11 +193,18 @@ public class SyntraConversationEngine {
         }
         SyntraPerformanceLogger.endTiming("special_pattern_check")
         
-        // Process through full cognitive system with conversation context
+        // FIXED: Build context BEFORE adding current message to prevent self-referencing
         SyntraPerformanceLogger.startTiming("context_building")
         let contextualInput = buildContextualInput(userMessage)
         SyntraPerformanceLogger.endTiming("context_building", details: "Built contextual input")
         
+        // NOW record user message (after context is built)
+        SyntraPerformanceLogger.startTiming("message_recording")
+        let userMsg = ConversationMessage(sender: "user", content: userMessage)
+        context.addMessage(userMsg)
+        SyntraPerformanceLogger.endTiming("message_recording")
+        
+        // Process through full cognitive system with conversation context
         SyntraPerformanceLogger.startTiming("cognitive_processing")
         SyntraPerformanceLogger.logStage("cognitive_start", message: "Starting three-brain processing")
         let cognitiveResult = await processThroughBrainsWithMemory(contextualInput)
