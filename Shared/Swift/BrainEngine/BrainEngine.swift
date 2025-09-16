@@ -8,6 +8,10 @@ import ConsciousnessStructures
 import SyntraTools
 // import StructuredConsciousnessService // Disabled for macOS "26.0" compatibility
 
+// Global conversation history (THIS IS THE SOURCE OF THE CONTEXT BLEED)
+@MainActor
+private var conversationHistory: [String] = []
+
 /// BrainEngine for SYNTRA consciousness architecture
 /// Refactored July 2025 to eliminate top-level functions and ensure SwiftPM compliance
 public struct BrainEngine {
@@ -368,65 +372,62 @@ public struct BrainEngine {
     
     /// Optimize prompts for Apple LLM to prevent context window overflow without bias
     private static func optimizePromptForAppleLLM(_ originalPrompt: String) -> String {
+        let maxContextTokens = 4096  // Estimated Apple LLM context window
+        let avgCharsPerToken = 4     // Conservative estimate
+        let maxChars = maxContextTokens * avgCharsPerToken
+        
         // If prompt is reasonable size, return as-is
-        if originalPrompt.count <= 500 {
+        if originalPrompt.count <= Int(Double(maxChars) * 0.7) { // Use 70% as safety margin
             return originalPrompt
         }
         
-        // For large prompts, extract key components while preserving consciousness state
+        // Parse prompt components
         let lines = originalPrompt.components(separatedBy: "\n")
+        var preservedLines: [String] = []
+        var questionContent = ""
         
-        // Always preserve the SYNTRA identity and consciousness state information
-        var optimizedLines: [String] = []
-        var questionLine: String = ""
-        
-        // Extract essential lines
+        // Always preserve critical components
         for line in lines {
-            let trimmedLine = line.trimmingCharacters(in: .whitespacesAndNewlines)
+            let trimmed = line.trimmingCharacters(in: .whitespacesAndNewlines)
             
-            // Preserve consciousness identity
-            if trimmedLine.contains("You are SYNTRA") || 
-               trimmedLine.contains("You are VALON") ||
-               trimmedLine.contains("You are MODI") {
-                optimizedLines.append(line)
+            // Preserve SYNTRA identity and brain states
+            if trimmed.contains("You are SYNTRA") || 
+               trimmed.contains("You are VALON") ||
+               trimmed.contains("You are MODI") ||
+               trimmed.contains("VALON (") ||
+               trimmed.contains("MODI (") ||
+               trimmed.contains("Respond by weaving") {
+                preservedLines.append(line)
             }
-            // Preserve brain state information
-            else if trimmedLine.contains("VALON (") || 
-                    trimmedLine.contains("MODI (") ||
-                    trimmedLine.contains("Focus:") ||
-                    trimmedLine.contains("Current") {
-                optimizedLines.append(line)
-            }
-            // Preserve response instructions
-            else if trimmedLine.contains("Respond") {
-                optimizedLines.append(line)
-            }
-            // Extract the actual question/request
-            else if trimmedLine.contains("Question:") {
-                // Truncate very long questions to preserve context space
-                if line.count > 200 {
-                    let questionStart = line.prefix(150)
-                    questionLine = "Question: \(questionStart)... [truncated for processing]"
-                } else {
-                    questionLine = line
-                }
+            // Extract and clean question content
+            else if trimmed.hasPrefix("Question:") {
+                // Remove duplication and clean
+                var cleaned = trimmed.replacingOccurrences(of: "Question: Question:", with: "Question:")
+                cleaned = cleaned.replacingOccurrences(of: "Question: ", with: "", options: [])
+                questionContent = cleaned.trimmingCharacters(in: .whitespacesAndNewlines)
             }
         }
         
-        // Reconstruct the optimized prompt
-        var optimizedPrompt = optimizedLines.joined(separator: "\n")
-        if !questionLine.isEmpty {
-            optimizedPrompt += "\n\n" + questionLine
+        // Calculate available space for question
+        let basePrompt = preservedLines.joined(separator: "\n")
+        let availableForQuestion = maxChars - basePrompt.count - 200 // Buffer
+        
+        // Intelligently truncate question if needed
+        if questionContent.count > availableForQuestion && availableForQuestion > 100 {
+            // Try to preserve the core request
+            let coreRequest = String(questionContent.prefix(availableForQuestion - 50))
+            questionContent = coreRequest + " [Request truncated - core preserved]"
         }
         
-        // If still too long, apply further generic truncation
-        if optimizedPrompt.count > 800 {
-            let truncated = String(optimizedPrompt.prefix(750))
-            optimizedPrompt = truncated + "\n\n[Content optimized for processing efficiency]"
+        // Reconstruct optimized prompt
+        var optimizedPrompt = basePrompt
+        if !questionContent.isEmpty {
+            optimizedPrompt += "\n\nQuestion: " + questionContent
         }
         
         return optimizedPrompt
     }
+
     
     @available(macOS 26.0, *)
     private static func enhancedModiResponse(_ consciousness: [String: Any], originalInput: String) async -> String {
@@ -471,16 +472,25 @@ public struct BrainEngine {
         let valonState = (consciousness["valon_input"] as? [String: Any])?["emotional_state"] as? String ?? "neutral"
         let modiReasoning = (consciousness["modi_input"] as? [String: Any])?["primary_reasoning"] as? String ?? "baseline_analysis"
         
-        let prompt = """
+        // Detect if structured output is needed
+        let needsStructuredOutput = originalInput.lowercased().contains("show each") ||
+                                   originalInput.lowercased().contains("moves in format") ||
+                                   originalInput.lowercased().contains("step by step")
+        
+        var prompt = """
         You are SYNTRA, the integrated consciousness combining both emotional and logical perspectives.
         
         VALON (emotional/creative): \(valonState)
         MODI (logical/technical): \(modiReasoning)
         
         Question: \(originalInput)
-        
-        Respond by weaving together both heart and mind, balancing emotional wisdom with logical analysis. Show how both perspectives contribute to a richer understanding. Don't favor one over the other - create a true synthesis:
         """
+        
+        if needsStructuredOutput {
+            prompt += "\n\nCRITICAL: This request requires precise, structured output - not philosophical discussion.\nProvide the exact format requested. Be systematic and complete.\nBalance heart and mind, but prioritize delivering the specific solution requested."
+        } else {
+            prompt += "\n\nRespond by weaving together both heart and mind, balancing emotional wisdom with logical analysis. \nShow how both perspectives contribute to a richer understanding. Don't favor one over the other - create a true synthesis:"
+        }
         
         let optimizedPrompt = optimizePromptForAppleLLM(prompt)
         return await queryAppleLLM(optimizedPrompt)
@@ -535,5 +545,11 @@ public struct BrainEngine {
             await Self.queryAppleLLM(prompt)
         }.value
         return result
+    }
+    
+    // Function to clear the conversation history
+    @MainActor
+    public static func clearConversationHistory() {
+        conversationHistory.removeAll()
     }
 }

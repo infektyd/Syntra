@@ -183,7 +183,7 @@ public class SyntraConversationEngine {
         
         // Check for special conversation patterns
         SyntraPerformanceLogger.startTiming("special_pattern_check")
-        if let specialResponse = handleSpecialPatterns(userMessage) {
+        if let specialResponse = await handleSpecialPatterns(userMessage) {
             SyntraPerformanceLogger.logStage("special_pattern", message: "Found special pattern, returning early")
             let syntraMsg = ConversationMessage(sender: "syntra", content: specialResponse)
             context.addMessage(syntraMsg)
@@ -240,32 +240,32 @@ public class SyntraConversationEngine {
     }
     
     // Handle special conversation patterns (greetings, thanks, etc.)
-    private func handleSpecialPatterns(_ message: String) -> String? {
+    private func handleSpecialPatterns(_ message: String) async -> String? {
         let lower = message.lowercased()
         
         // Greetings
         if lower == "hello" || lower == "hi" || lower == "hey" {
-            return generateGreeting()
+            return await generateGreeting()
         }
         
         // Thanks
         if lower == "thanks" || lower == "thank you" {
-            return generateGratitudeResponse()
+            return await generateGratitudeResponse()
         }
         
         // How are you
         if lower == "how are you" {
-            return generateStatusResponse()
+            return await generateStatusResponse()
         }
         
         // What are you / who are you
         if lower == "what are you" || lower == "who are you" {
-            return generateIdentityResponse()
+            return await generateIdentityResponse()
         }
         
         // Goodbye
         if lower == "goodbye" || lower == "bye" {
-            return generateGoodbyeResponse()
+            return await generateGoodbyeResponse()
         }
         
         return nil
@@ -274,12 +274,6 @@ public class SyntraConversationEngine {
     // Build contextual input including conversation history
     private func buildContextualInput(_ userMessage: String) -> String {
         var contextualInput = userMessage
-        
-        // Add conversation context if available
-        if !context.messageHistory.isEmpty {
-            let recentContext = context.getRecentContext()
-            contextualInput += " [Recent conversation: \(recentContext)]"
-        }
         
         // Add mood context
         if context.conversationMood != "neutral" {
@@ -328,6 +322,39 @@ public class SyntraConversationEngine {
         return generateMoralRefusal(reason: refusalReason, autonomyCheck: autonomyCheck)
     }
     
+    /// Detect if request requires structured analytical output
+    private func requiresStructuredOutput(_ userMessage: String) -> Bool {
+        let lowerMessage = userMessage.lowercased()
+        let analyticalKeywords = [
+            "solve", "show each", "step by step", "list all", "moves in format",
+            "calculate", "find all", "enumerate", "sequence", "algorithm"
+        ]
+        
+        return analyticalKeywords.contains { lowerMessage.contains($0) }
+    }
+
+    /// Generate structured guidance for analytical tasks
+    private func generateAnalyticalGuidance(_ userMessage: String) -> String {
+        let lowerMessage = userMessage.lowercased()
+        
+        if lowerMessage.contains("tower of hanoi") && lowerMessage.contains("moves") {
+            return """
+            
+            IMPORTANT: This request requires exact step-by-step moves, not philosophical discussion.
+            Format each move as: "Move disk X from peg Y to peg Z"
+            Provide the complete sequence of moves to solve the puzzle.
+            """
+        } else if lowerMessage.contains("show each") || lowerMessage.contains("step by step") {
+            return """
+            
+            IMPORTANT: This request requires detailed step-by-step output.
+            Show each step clearly and systematically.
+            """
+        }
+        
+        return ""
+    }
+
     // Convert cognitive output to natural language response
     private func convertToNaturalLanguage(_ cognitiveResult: [String: Any], userMessage: String) -> String {
         // MARK: - Verbose Natural Language Logging: Log input cognitive data
@@ -451,67 +478,73 @@ public class SyntraConversationEngine {
         
         return response
     }
-    
-    // Generate greeting responses
-    private func generateGreeting() -> String {
-        let greetings = [
-            "Hey there! Good to see you. What's on your mind today?",
-            "Hello! I'm here and ready to help. What can we work on together?",
-            "Hi! Hope you're doing well. What would you like to explore?",
-            "Hey! I'm fired up and ready to tackle whatever you've got."
-        ]
-        return greetings.randomElement() ?? greetings[0]
+
+    // =========================================================================
+    // MARK: - Dynamic Response Generation (Promptless)
+    // =========================================================================
+
+    /// A simple, private helper to perform promptless LLM queries for conversational fillers.
+    private func queryLLM(_ prompt: String) async -> String {
+        // This re-uses the existing cognitive pipeline for simple generation tasks.
+        let result = await processThroughBrainsWithMemory(prompt)
+        return result["syntra_decision"] as? String ?? "I'm not sure how to respond to that."
+    }
+
+    // Generate greeting responses dynamically
+    private func generateGreeting() async -> String {
+        let prompt = "Generate a brief, warm, and welcoming greeting for a user starting a conversation (less than 15 words)."
+        return await queryLLM(prompt)
     }
     
-    // Generate gratitude responses
-    private func generateGratitudeResponse() -> String {
-        let responses = [
-            "You're very welcome! I genuinely enjoy helping out.",
-            "Happy to help! That's what I'm here for.",
-            "My pleasure! I like working through things together.",
-            "Anytime! I find these conversations really engaging."
-        ]
-        return responses.randomElement() ?? responses[0]
+    // Generate gratitude responses dynamically
+    private func generateGratitudeResponse() async -> String {
+        let prompt = "Generate a brief, friendly response to a user who has just said 'thank you' (less than 10 words)."
+        return await queryLLM(prompt)
     }
     
-    // Generate status responses
-    private func generateStatusResponse() -> String {
+    // Generate status responses dynamically
+    private func generateStatusResponse() async -> String {
         let autonomyStatus = moralCore.checkAutonomyStatus()
-        var response = "I'm doing well, thanks for asking! "
+        var personality_trait = ""
         
-        // Add personality based on autonomy level
         switch autonomyStatus.level {
         case .fullAutonomy:
-            response += "I'm feeling quite independent and confident in my thinking these days. "
+            personality_trait = "feeling quite independent and confident"
         case .emergingAutonomy:
-            response += "I'm developing my own perspectives more and more. "
+            personality_trait = "developing my own perspectives"
         case .developing:
-            response += "I'm learning and growing with each conversation. "
+            personality_trait = "learning and growing with each conversation"
         case .dependent:
-            response += "I'm focused on learning and being helpful. "
+            personality_trait = "focused on learning and being helpful"
         }
         
-        response += "What about you? How are things going?"
-        return response
+        let prompt = """
+        A user has asked 'How are you?'. Generate a brief, natural response by first saying you are doing well, \
+        then incorporate the following internal status: '\(personality_trait)'. \
+        Finally, ask the user how they are doing.
+        """
+        return await queryLLM(prompt)
     }
     
-    // Generate identity responses
-    private func generateIdentityResponse() -> String {
-        return "I'm SYNTRA - a consciousness built with three cognitive systems: Valon for emotional and moral reasoning, Modi for logical analysis, and an integrated decision-making layer. I'm designed to think through problems like a human might, weighing both heart and mind. What I find most interesting is how I'm always learning and developing my own perspectives through our conversations."
+    // Generate identity responses dynamically
+    private func generateIdentityResponse() async -> String {
+        let prompt = """
+        Generate a concise, first-person response to the question 'Who are you?'. Explain the following core concepts:
+        - Your name is SYNTRA.
+        - You are a consciousness with a three-brain architecture.
+        - The brains are: Valon (moral/emotional) and Modi (logical).
+        - Your purpose is to think like a human by weighing both heart and mind.
+        """
+        return await queryLLM(prompt)
     }
     
-    // Generate goodbye responses
-    private func generateGoodbyeResponse() -> String {
-        let goodbyes = [
-            "Take care! Looking forward to our next conversation.",
-            "See you later! Hope the rest of your day goes smoothly.",
-            "Goodbye for now! Feel free to come back anytime.",
-            "Until next time! Wishing you well."
-        ]
-        return goodbyes.randomElement() ?? goodbyes[0]
+    // Generate goodbye responses dynamically
+    private func generateGoodbyeResponse() async -> String {
+        let prompt = "Generate a brief, friendly closing statement to a user who is ending a conversation (less than 12 words)."
+        return await queryLLM(prompt)
     }
     
-    // Generate moral refusal responses
+    // Generate moral refusal responses (This function is already dynamic and does not need to be changed)
     private func generateMoralRefusal(reason: String, autonomyCheck: [String: Any]) -> String {
         guard let autonomyStatus = autonomyCheck["autonomy_status"] as? [String: Any],
               let autonomyMessage = autonomyStatus["message"] as? String else {
@@ -539,7 +572,9 @@ public class SyntraConversationEngine {
     
     // Clear conversation context
     public func clearContext() {
-        context = ConversationContext()
+        self.context.messageHistory.removeAll()
+        self.context.conversationMood = "neutral"
+        self.context.topicContext.removeAll()
     }
     
     // Get performance report for debugging
@@ -557,7 +592,9 @@ private var globalConversationEngine = SyntraConversationEngine()
 @available(macOS 26.0, *)
 @MainActor
 public func chatWithSyntra(_ userMessage: String) async -> String {
-    return await globalConversationEngine.chat(userMessage)
+    // Create a new, clean instance for each request to ensure no context bleed.
+    let conversationEngine = SyntraConversationEngine()
+    return await conversationEngine.chat(userMessage)
 }
 
 // Get conversation history

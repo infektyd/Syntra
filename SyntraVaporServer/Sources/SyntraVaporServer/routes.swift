@@ -12,173 +12,6 @@ struct ModelData: Content {
     let created: Int
 }
 
-// --- CHAT COMPLETION REQUEST MODEL ---
-
-struct ChatCompletionRequest: Content {
-    struct Message: Content {
-        let role: String
-        let content: ContentType
-
-        enum ContentType: Content {
-            case string(String)
-            case parts([ContentPart])
-
-            struct ContentPart: Content {
-                let type: String
-                let text: String
-            }
-
-            init(from decoder: any Decoder) throws {
-                let container = try decoder.singleValueContainer()
-                if let stringValue = try? container.decode(String.self) {
-                    self = .string(stringValue)
-                } else if let arrayValue = try? container.decode([ContentPart].self) {
-                    self = .parts(arrayValue)
-                } else {
-                    throw DecodingError.dataCorruptedError(in: container, debugDescription: "Content is not a string or an array of content parts.")
-                }
-            }
-
-            func encode(to encoder: any Encoder) throws {
-                var container = encoder.singleValueContainer()
-                switch self {
-                case .string(let string):
-                    try container.encode(string)
-                case .parts(let parts):
-                    try container.encode(parts)
-                }
-            }
-
-            func asString() -> String {
-                switch self {
-                case .string(let str):
-                    return str
-                case .parts(let parts):
-                    // Concatenate the text from all parts. This is a reasonable default.
-                    return parts.compactMap { $0.text }.joined(separator: "\n")
-                }
-            }
-        }
-    }
-
-    let model: String?
-    let messages: [Message]
-    let stream: Bool?
-    let tools: [Tool]?
-    let toolChoice: ToolChoice?
-    // You can expand this as needed below.
-
-    struct Tool: Content {
-        let type: String // "function"
-        let function: Function
-
-        struct Function: Content {
-            let name: String
-            let description: String?
-            let parameters: [String: String] // Simplified for now
-        }
-    }
-
-    enum ToolChoice: Content {
-        case none
-        case auto
-        case specific(String)
-
-        init(from decoder: any Decoder) throws {
-            let container = try decoder.singleValueContainer()
-            if let stringValue = try? container.decode(String.self) {
-                switch stringValue {
-                case "none": self = .none
-                case "auto": self = .auto
-                default:
-                    throw DecodingError.dataCorruptedError(in: container, debugDescription: "Invalid string for ToolChoice")
-                }
-            } else if let dictValue = try? container.decode([String: String].self), dictValue["type"] == "function" {
-                if let functionName = dictValue["name"] {
-                    self = .specific(functionName)
-                } else {
-                    throw DecodingError.dataCorruptedError(in: container, debugDescription: "ToolChoice function requires a name")
-                }
-            } else {
-                self = .auto // Default behavior if not specified
-            }
-        }
-
-        func encode(to encoder: any Encoder) throws {
-            struct SpecificToolChoicePayload: Encodable {
-                let type: String
-                let function: FunctionPayload
-                struct FunctionPayload: Encodable {
-                    let name: String
-                }
-            }
-            var container = encoder.singleValueContainer()
-            switch self {
-            case .none:
-                try container.encode("none")
-            case .auto:
-                try container.encode("auto")
-            case .specific(let name):
-                let payload = SpecificToolChoicePayload(type: "function", function: .init(name: name))
-                try container.encode(payload)
-            }
-        }
-    }
-}
-
-// --- CHAT COMPLETION RESPONSE MODEL AND SUPPORT ---
-
-struct ChatCompletionResponse: Content {
-    let id: String
-    let object: String
-    let created: Int
-    let model: String
-    let choices: [Choice]
-
-    struct Choice: Content {
-        let index: Int
-        let message: ResponseMessage
-        let finish_reason: String
-    }
-}
-
-struct ResponseMessage: Content {
-    struct ToolCall: Content {
-        struct Function: Content {
-            let name: String
-            let arguments: String
-        }
-
-        let id: String
-        let type: String // "function"
-        let function: Function
-    }
-
-    let role: String
-    let content: String? // Can be null when using tools
-    let tool_calls: [ToolCall]?
-}
-
-struct ChatCompletionChunkResponse: Content {
-    let id: String
-    let object: String
-    let created: Int
-    let model: String
-    let choices: [ChunkChoice]
-
-    struct ChunkChoice: Content {
-        struct Delta: Content {
-            let role: String?
-            let content: String?
-            let tool_calls: [ResponseMessage.ToolCall]?
-        }
-
-        let index: Int
-        let delta: Delta
-        let finish_reason: String?
-    }
-}
-
 struct ErrorResponse: Content {
     let error: String
     let message: String
@@ -237,7 +70,7 @@ func routes(_ app: Application) throws {
         do {
             let chatRequest = try JSONDecoder().decode(ChatCompletionRequest.self, from: buffer)
             req.logger.info("Successfully decoded request for model: \(chatRequest.model ?? "not specified")")
-            let userPrompt = chatRequest.messages.last(where: { $0.role == "user" })?.content.asString() ?? ""
+            let userPrompt = chatRequest.messages.last(where: { $0.role == .user })?.content.asString() ?? ""
             guard !userPrompt.isEmpty else {
                 req.logger.warning("User prompt is empty or missing.")
                 throw Abort(.badRequest, reason: "User prompt is empty or missing.")
@@ -265,7 +98,7 @@ func routes(_ app: Application) throws {
                     Task {
                         do {
                             // 1. Send initial role chunk
-                            let initialChunk = ChatCompletionChunkResponse(
+                            let initialChunk = ChatCompletionChunk(
                                 id: responseID,
                                 object: "chat.completion.chunk",
                                 created: creationDate,
@@ -279,7 +112,7 @@ func routes(_ app: Application) throws {
                             let stream = try await SyntraHandlers.handleProcessThroughBrainsStream(processedPrompt)
                             for try await chunk in stream {
                                 // You may also process chunks here if you want (sanitizeOutput)
-                                let chunkResponse = ChatCompletionChunkResponse(
+                                let chunkResponse = ChatCompletionChunk(
                                     id: responseID,
                                     object: "chat.completion.chunk",
                                     created: creationDate,
@@ -292,7 +125,7 @@ func routes(_ app: Application) throws {
                                 _ = writer.write(.buffer(.init(string: eventString)))
                             }
                             // 3. Send final finish reason chunk
-                            let finalChunk = ChatCompletionChunkResponse(
+                            let finalChunk = ChatCompletionChunk(
                                 id: responseID,
                                 object: "chat.completion.chunk",
                                 created: creationDate,
@@ -334,7 +167,7 @@ func routes(_ app: Application) throws {
                     req.logger.info("Detected tool call: \(syntraToolCall.tool_name)")
                     let argumentsData = try JSONEncoder().encode(syntraToolCall.arguments)
                     let argumentsString = String(data: argumentsData, encoding: .utf8) ?? "{}"
-                    let responseMessage = ResponseMessage(
+                    let responseMessage = ChatCompletionResponse.AssistantMessage(
                         role: "assistant",
                         content: nil,
                         tool_calls: [.init(
@@ -348,7 +181,8 @@ func routes(_ app: Application) throws {
                         object: "chat.completion",
                         created: Int(Date().timeIntervalSince1970),
                         model: chatRequest.model ?? "syntra-consciousness",
-                        choices: [.init(index: 0, message: responseMessage, finish_reason: "tool_calls")]
+                        choices: [.init(index: 0, message: responseMessage, finish_reason: "tool_calls")],
+                        usage: nil
                     )
                     return try await response.encodeResponse(for: req)
                 } else {
@@ -357,7 +191,8 @@ func routes(_ app: Application) throws {
                         object: "chat.completion",
                         created: Int(Date().timeIntervalSince1970),
                         model: chatRequest.model ?? "syntra-consciousness",
-                        choices: [.init(index: 0, message: ResponseMessage(role: "assistant", content: cleanedReply, tool_calls: nil), finish_reason: "stop")]
+                        choices: [.init(index: 0, message: .init(role: "assistant", content: cleanedReply, tool_calls: nil), finish_reason: "stop")],
+                        usage: nil
                     )
                     return try await response.encodeResponse(for: req)
                 }
