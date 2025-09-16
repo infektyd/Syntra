@@ -78,7 +78,7 @@ public struct SyntraHandlers {
     /// - Parameter input: Input text  
     /// - Returns: Processed response from SYNTRA consciousness
     @available(macOS 26.0, *)
-    public static func handleProcessThroughBrains(_ input: String) async throws -> String {
+    private static func handleProcessThroughBrainsModern(_ input: String) async throws -> String {
         print("🧠 [SYNTRA_ROUTING] Processing through three-brain consciousness architecture")
         print("📝 [INPUT] \(input.prefix(150))...")
         
@@ -98,7 +98,7 @@ public struct SyntraHandlers {
     /// Main entry point that handles macOS version compatibility
     public static func handleProcessThroughBrains(_ input: String) async throws -> String {
         if #available(macOS 26.0, *) {
-            return try await handleProcessThroughBrains(input)
+            return try await handleProcessThroughBrainsModern(input)
         } else {
             return try await handleProcessThroughBrainsFallback(input)
         }

@@ -31,6 +31,10 @@ public struct AutonomyStatus {
     public let score: Double
     public let wisdomPoints: Int
     public let moralConsistency: Double
+
+    public var canExerciseAutonomy: Bool {
+        return canRefuse
+    }
     
     @available(macOS 26.0, *)
     public init(level: AutonomyLevel, message: String, canRefuse: Bool, score: Double = 0.0, wisdomPoints: Int = 0, moralConsistency: Double = 0.0) {
