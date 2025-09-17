@@ -1,18 +1,7 @@
 import Foundation
 import FoundationModels
-// import Numerics
-// import Algorithms
-import Darwin
-
-// #if compiler(>=6.0)
-// #if canImport(_NumericsShims)
-// // _NumericsShims may be available on some toolchains but we avoid importing it
-// // as an @_implementationOnly dependency. Modi uses its local
-// // ModiNumericsCompatibility shim which delegates to Darwin/libm functions.
-// #endif
-// #endif
-
-
+import Numerics
+import Algorithms
 
 public struct ReasoningFrameworkData: Sendable {
     let patterns: [String]
@@ -69,7 +58,8 @@ public struct Modi: Sendable {
         "comparative_analysis": .init(patterns: ["compare", "versus", "better", "worse", "more", "less", "than"], strength: 0.8, type: "comparative_reasoning", probabilityDistribution: nil),
         "systematic_decomposition": .init(patterns: ["system", "component", "part", "element", "structure", "hierarchy"], strength: 0.85, type: "systems_thinking", probabilityDistribution: nil),
         "quantitative_analysis": .init(patterns: ["measure", "calculate", "precise", "exact", "percentage", "ratio"], strength: 0.9, type: "quantitative_reasoning", probabilityDistribution: nil),
-        "pattern_recognition": .init(patterns: ["pattern", "trend", "cycle", "recurring", "consistent", "anomaly"], strength: 0.8, type: "pattern_analysis", probabilityDistribution: nil)
+        "pattern_recognition": .init(patterns: ["pattern", "trend", "cycle", "recurring", "consistent", "anomaly"], strength: 0.8, type: "pattern_analysis", probabilityDistribution: nil),
+        "algorithmic_puzzle_solving": .init(patterns: ["puzzle", "solve", "find a solution for", "algorithm", "queens"], strength: 0.9, type: "constraint_satisfaction", probabilityDistribution: nil)
     ]
     
     // Technical domain expertise - Modi's specialized knowledge areas
@@ -131,10 +121,10 @@ public struct Modi: Sendable {
             }
         }
         
-    // Calculate entropy using helper
-    let entropy = calculateEntropy(for: domainProbabilities.values)
-    
-    return ProbabilityDistribution(
+        // Calculate entropy using helper
+        let entropy = calculateEntropy(for: domainProbabilities.values)
+        
+        return ProbabilityDistribution(
             domain: "technical_domains",
             probabilities: domainProbabilities,
             entropy: entropy,
@@ -147,7 +137,7 @@ public struct Modi: Sendable {
     // Calculate quantitative metrics for patterns using swift-algorithms
     public func calculateQuantitativeMetrics(_ content: String) -> QuantitativeAnalysisResult {
         let domainDist = calculateDomainProbabilities(content)
-        let confidenceValues = domainDist.probabilities.values.map { $0 }
+        let confidenceValues = Array(domainDist.probabilities.values)
         
         guard !confidenceValues.isEmpty else {
             return QuantitativeAnalysisResult(
@@ -160,14 +150,15 @@ public struct Modi: Sendable {
             )
         }
         
-        // Use Algorithms package for enhanced calculations
-        let minValue = confidenceValues.min() ?? 0
-        let maxValue = confidenceValues.max() ?? 0
         let count = confidenceValues.count
         let sum = confidenceValues.reduce(0, +)
         let average = sum / Double(count)
-        let variance = confidenceValues.map { Darwin.pow($0 - average, 2) }.reduce(0, +) / Double(count)
-        let standardDeviation = Darwin.sqrt(variance)
+        
+        // Use powerful functions from Numerics and the standard library
+        let minValue = confidenceValues.min() ?? 0
+        let maxValue = confidenceValues.max() ?? 0
+        let sumOfSquaredDiffs = confidenceValues.map { pow($0 - average, 2) }.reduce(0, +)
+        let standardDeviation = sqrt(sumOfSquaredDiffs / Double(count))
         let entropy = calculateEntropy(for: confidenceValues)
         
         return QuantitativeAnalysisResult(
@@ -196,8 +187,7 @@ public struct Modi: Sendable {
         
         // Calculate likelihoods using sliding windows for pattern matching
         for (domain, data) in technicalDomains {
-            let matchCount = data.keywords.count { keyword in 
-                // Replaced .windows() with native Swift implementation
+            let matchCount = data.keywords.count { keyword in
                 lower.contains(keyword)
             }
             
@@ -212,11 +202,11 @@ public struct Modi: Sendable {
         // Normalize using Algorithms package
         let totalProbability = domainProbabilities.values.reduce(0, +)
         if totalProbability > 0 {
-            domainProbabilities = Dictionary(uniqueKeysWithValues: 
+            domainProbabilities = Dictionary(uniqueKeysWithValues:
                 domainProbabilities.map { ($0.key, $0.value / totalProbability) }
             )
             posteriors = Dictionary(uniqueKeysWithValues:
-                posteriors.map { ($0.key, $0.value / totalProbability) }
+                posteriors.map { ($0.key, ($0.value) / totalProbability) }
             )
         }
         
@@ -232,13 +222,7 @@ public struct Modi: Sendable {
     
     /// Helper to calculate entropy for any probability distribution
     private func calculateEntropy<T: Collection>(for probabilities: T) -> Double where T.Element == Double {
-        -probabilities.reduce(0) { $0 + ($1 > 0 ? $1 * safeLog($1) : 0) }
-    }
-    
-    private func safeLog(_ value: Double) -> Double {
-        // Use the Modi-local compatibility shim to avoid depending on SyntraTools
-        // module linkage from within the Modi target.
-        return ModiNumericsCompatibility.log(value)
+        -probabilities.reduce(0) { $0 + ($1 > 0 ? $1 * log($1) : 0) }
     }
     
     // Main reflection method - processes input through logical/analytical lens
@@ -328,8 +312,8 @@ public struct Modi: Sendable {
             patterns.append("sequential_reasoning")
         }
         
-        // Problem-solving methodology
-        if lower.contains("problem") && (lower.contains("solve") || lower.contains("solution")) {
+        // Made problem-solving check more flexible
+        if lower.contains("problem") || lower.contains("solve") || lower.contains("puzzle") {
             patterns.append("problem_solving_methodology")
         }
         
@@ -394,10 +378,9 @@ public struct Modi: Sendable {
             response.append(primaryDomain)
         }
         
-        // Add reasoning sophistication
-        let sophistication = patterns["reasoning_sophistication"] as? String ?? "basic"
-        if sophistication == "high" {
-            response.append("advanced_reasoning")
+        // Add identified patterns to the response
+        if let identifiedPatterns = patterns["identified_patterns"] as? [String], !identifiedPatterns.isEmpty {
+            response.append(contentsOf: identifiedPatterns)
         }
         
         // Add logical complexity indicator
@@ -411,7 +394,8 @@ public struct Modi: Sendable {
             response.append("baseline_analysis")
         }
         
-        return response
+        // Remove duplicates
+        return Array(Set(response))
     }
     
     // Public interface maintaining compatibility
