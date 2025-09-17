@@ -21,11 +21,12 @@ public final class SyntraEngine: SyntraChatRuntime, @unchecked Sendable {
             return "Syntra is ready. Please provide a prompt."
         }
         
-        // Clear the conversation history in the BrainEngine before processing the request.
-        await BrainEngine.clearConversationHistory()
-        
-        // ✅ INTEGRATION: Call the shared SyntraCore instance you provided.
-        return await SyntraCore.shared.processWithValonModi(text)
+        // NOTE: Stateless server mode — prevent context bleed between requests.
+        // If you want to hard-clear any legacy BrainEngine state, you can call
+        // BrainEngine.clearConversationHistory() here, but we avoid importing BrainEngine
+        // in the server target to keep dependencies minimal.
+        // Route through ConversationalInterface's stateless entrypoint.
+        return await chatWithSyntraStateless(text)
     }
 
     /// Handles streaming chat requests.
@@ -40,11 +41,9 @@ public final class SyntraEngine: SyntraChatRuntime, @unchecked Sendable {
             }
         }
         
-        // Clear the conversation history in the BrainEngine before processing the request.
-        await BrainEngine.clearConversationHistory()
-        
-        // ✅ INTEGRATION: Call the shared SyntraCore instance you provided.
-        let responseText = await SyntraCore.shared.processWithValonModi(text)
+        // NOTE: Stateless server mode — prevent context bleed between requests (streaming path).
+        // See note above about optional BrainEngine.clearConversationHistory()
+        let responseText = await chatWithSyntraStateless(text)
         
         // This simulates streaming for the response.
         return AsyncStream { continuation in
