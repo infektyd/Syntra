@@ -56,10 +56,3 @@ This three-phase process is the finalized logic flow for SYNTRA. It ensures that
 * **`SyntraVaporServer/Sources/SyntraVaporServer/SyntraEngine.swift`**: The bridge connecting the Vapor web server to the `SyntraCore`. It manages the API request/response cycle and stateful conversation context.
 
 ---
-## 5. Current Status & Next Steps
-
-* **Status:** The project has successfully identified a core architectural flaw where a placeholder synthesis function was being used. The "promptless" vision and the "Pre-process, Generate, Verify" logic flow have been defined as the path forward.
-* **Next Steps:**
-    1.  Implement the new `BrainCore` class inside `SyntraCore.swift` to handle the focused generation (Phase 2).
-    2.  Implement the `verifySolution` method inside the `ModiCore` class (Phase 3).
-    3.  Update the main `processWithValonModi` function to orchestrate this new three-phase flow.
