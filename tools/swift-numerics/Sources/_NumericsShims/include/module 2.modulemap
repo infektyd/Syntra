@@ -1,0 +1,3 @@
+module InternalNumericsShims {
+  header "_NumericsShims.h"
+}
