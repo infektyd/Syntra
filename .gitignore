@@ -137,3 +137,11 @@ archived_tests/*.rtf
 ######################################
 *.pdf
 .aider*
+
+######################################
+# User-specified ignores
+######################################
+backend.json
+backend.md
+method.md
+syntra_fix_cli_prompt.md

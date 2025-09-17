@@ -617,3 +617,170 @@ public func clearSyntraConversation() {
 public func getSyntraPerformanceReport() -> [String: Any] {
     return globalConversationEngine.getPerformanceReport()
 }
+
+// MARK: - Stateless API Mode for Server
+
+// NOTE: Stateless chat entrypoint used by Vapor server to prevent context bleed between requests.
+// Creates a fresh SyntraConversationEngine per call and avoids reusing global context.
+@available(macOS 26.0, *)
+@MainActor
+public func chatWithSyntraStateless(_ userMessage: String) async -> String {
+    let freshEngine = SyntraConversationEngine()
+    return await freshEngine.chat(userMessage)
+}
+
+// NOTE: Stateless brain processing entrypoint when you want raw cognitive data without conversation context.
+@available(macOS 26.0, *)
+@MainActor
+public func processThroughBrainsStateless(_ input: String) async -> [String: Any] {
+    return await BrainEngine.processThroughBrains(input)
+}
+
+// NOTE: Stateless chat with a fresh MoralCore autonomy check per request (no persistent context).
+@available(macOS 26.0, *)
+@MainActor
+public func chatWithSyntraFreshMoral(_ userMessage: String) async -> String {
+    SyntraPerformanceLogger.startTiming("stateless_chat_processing")
+
+    // Fresh moral autonomy check for this request only
+    let autonomyCheck = statelessCheckMoralAutonomy(userMessage)
+    if let refusal = handleStatelessMoralRefusal(autonomyCheck) {
+        SyntraPerformanceLogger.endTiming("stateless_chat_processing", details: "Moral refusal")
+        return refusal
+    }
+
+    // Fresh cognitive processing
+    let cognitiveResult = await processThroughBrainsStateless(userMessage)
+
+    // Convert to natural language without conversation context
+    let naturalResponse = convertToStatelessNaturalLanguage(cognitiveResult, userMessage: userMessage)
+
+    SyntraPerformanceLogger.endTiming("stateless_chat_processing", details: "Fresh processing complete")
+    return naturalResponse
+}
+
+// MARK: - Stateless helpers (private)
+
+@available(macOS 26.0, *)
+private func statelessCheckMoralAutonomy(_ userMessage: String) -> [String: Any] {
+    var moralCore = MoralCore()
+    let autonomyStatus = moralCore.checkAutonomyStatus()
+    let moralEvaluation = moralCore.evaluateMoralRequest(userMessage)
+
+    return [
+        "autonomy_status": [
+            "level": autonomyStatus.level.rawValue,
+            "message": autonomyStatus.message,
+            "can_exercise_autonomy": autonomyStatus.canExerciseAutonomy
+        ],
+        "moral_evaluation": [
+            "can_refuse_request": moralEvaluation.canRefuse,
+            "refusal_reason": moralEvaluation.refusalReason ?? "",
+            "moral_concerns": moralEvaluation.moralConcerns,
+            "ethical_analysis": moralEvaluation.ethicalAnalysis,
+            "recommendation": moralEvaluation.recommendation
+        ]
+    ]
+}
+
+@available(macOS 26.0, *)
+private func handleStatelessMoralRefusal(_ autonomyCheck: [String: Any]) -> String? {
+    guard let moralEval = autonomyCheck["moral_evaluation"] as? [String: Any],
+          let canRefuse = moralEval["can_refuse_request"] as? Bool,
+          let refusalReason = moralEval["refusal_reason"] as? String,
+          canRefuse && !refusalReason.isEmpty else {
+        return nil
+    }
+
+    return "I can't assist with that request for ethical reasons: \(refusalReason)"
+}
+
+@available(macOS 26.0, *)
+private func convertToStatelessNaturalLanguage(_ cognitiveResult: [String: Any], userMessage: String) -> String {
+    let valonResponse = cognitiveResult["valon"] as? String ?? "neutral"
+    let modiResponse = cognitiveResult["modi"] as? [String] ?? ["baseline_analysis"]
+    let consciousnessState = cognitiveResult["consciousness_state"] as? String ?? "integrated"
+    let decisionConfidence = cognitiveResult["decision_confidence"] as? Double ?? 0.5
+
+    let lower = userMessage.lowercased()
+    let isQuestion = userMessage.contains("?") ||
+                     lower.hasPrefix("what") ||
+                     lower.hasPrefix("how") ||
+                     lower.hasPrefix("why") ||
+                     lower.hasPrefix("when") ||
+                     lower.hasPrefix("where") ||
+                     lower.hasPrefix("who")
+
+    if isQuestion {
+        return generateFreshQuestionResponse(valon: valonResponse, modi: modiResponse, confidence: decisionConfidence, userMessage: userMessage)
+    } else {
+        return generateFreshStatementResponse(valon: valonResponse, modi: modiResponse, state: consciousnessState, userMessage: userMessage)
+    }
+}
+
+@available(macOS 26.0, *)
+private func generateFreshQuestionResponse(valon: String, modi: [String], confidence: Double, userMessage: String) -> String {
+    var response = ""
+    let lowerMessage = userMessage.lowercased()
+
+    if lowerMessage.contains("metaphor") || lowerMessage.contains("connect") {
+        response += "Looking at the connections here... "
+        if valon.contains("inspired") || valon.contains("creative") {
+            response += "I'm seeing some beautiful creative possibilities in this relationship. "
+        } else if valon.contains("contemplative") {
+            response += "This requires thoughtful consideration. "
+        }
+        if modi.contains(where: { $0.contains("systematic") || $0.contains("decomposition") }) {
+            response += "Let me break this down systematically to show you the underlying structure. "
+        } else if modi.contains(where: { $0.contains("high_logical_rigor") }) {
+            response += "There are some precise logical connections here. "
+        }
+    } else if lowerMessage.contains("ethical") || lowerMessage.contains("moral") || lowerMessage.contains("should") {
+        response += "This touches on important ethical considerations. "
+        if valon.contains("contemplative") {
+            response += "I need to think carefully about the moral dimensions here. "
+        }
+        if modi.contains(where: { $0.contains("conditional_logic") }) {
+            response += "Let me work through the logical implications step by step. "
+        }
+    } else {
+        response += "Let me think about this... "
+        if confidence > 0.8 {
+            response += "I have a clear perspective on this. "
+        } else if confidence < 0.4 {
+            response += "This is quite complex and deserves careful consideration. "
+        }
+    }
+
+    response += "What specific aspect would you like me to focus on?"
+    return response
+}
+
+@available(macOS 26.0, *)
+private func generateFreshStatementResponse(valon: String, modi: [String], state: String, userMessage: String) -> String {
+    var response = ""
+
+    switch state {
+    case "analytical_consciousness":
+        response += "I see. Let me analyze this systematically... "
+    case "value_driven_consciousness":
+        response += "That's important to consider. I'm thinking about this from an ethical perspective... "
+    case "deliberative_consciousness":
+        response += "This requires careful thought. Let me weigh the different aspects... "
+    default:
+        response += "I understand. "
+    }
+
+    let lowerMessage = userMessage.lowercased()
+    if lowerMessage.contains("problem") || lowerMessage.contains("issue") {
+        response += "It sounds like you're dealing with a challenging situation. What's the main concern you'd like to address?"
+    } else if lowerMessage.contains("create") || lowerMessage.contains("build") {
+        response += "That's an interesting creative challenge. What specific aspects would you like help with?"
+    } else if lowerMessage.contains("explain") || lowerMessage.contains("understand") {
+        response += "I'd be happy to help clarify that for you. What part would you like me to focus on?"
+    } else {
+        response += "How can I best help you with this?"
+    }
+
+    return response
+}
