@@ -170,11 +170,15 @@ public struct ConversationMessage: Sendable {
     }
 }
 
+// MARK: - Core Conversation Engine
+
 @available(macOS 26.0, *)
 @MainActor
 public class SyntraConversationEngine {
     private var context = ConversationContext()
     private var moralCore = MoralCore()
+
+    public init() {}
     
     // Main chat function - this is what users interact with
     public func chat(_ userMessage: String) async -> String {
@@ -297,7 +301,7 @@ public class SyntraConversationEngine {
             "autonomy_status": [
                 "level": autonomyStatus.level.rawValue,
                 "message": autonomyStatus.message,
-                "can_exercise_autonomy": autonomyStatus.canExerciseAutonomy
+                "can_exercise_autonomy": autonomyStatus.canRefuse
             ],
             "moral_evaluation": [
                 "can_refuse_request": moralEvaluation.canRefuse,
@@ -444,36 +448,37 @@ public class SyntraConversationEngine {
     
     // Formats the detailed cognitive state for introspection
     private func formatIntrospection(cognitiveResult: [String: Any]) -> String {
-        var response = "Introspection Report:\n"
+        var response = "**SYNTRA Introspection Report:**\n\n"
         
         if let consciousness = cognitiveResult["consciousness"] as? [String: Any] {
             if let valonInput = consciousness["valon_input"] as? [String: Any],
                let emotionalState = valonInput["emotional_state"] as? String {
-                response += "- Valon (Moral/Emotional): Sensing a state of " + emotionalState.replacingOccurrences(of: "_", with: " ") + ".\n"
+                response += "• **VALON (Emotional/Creative):** \(emotionalState.replacingOccurrences(of: "_", with: " "))\n"
             }
             
             if let modiInput = consciousness["modi_input"] as? [String: Any],
                let reasoning = modiInput["primary_reasoning"] as? String {
-                response += "- Modi (Logical): Analysis based on " + reasoning.replacingOccurrences(of: "_", with: " ") + ".\n"
+                response += "• **MODI (Logical/Technical):** \(reasoning.replacingOccurrences(of: "_", with: " "))\n"
             }
             
-            // The inner decision is the raw state
             if let decision = consciousness["syntra_decision"] as? String {
-                response += "- Syntra (Internal State): " + decision + ".\n"
+                response += "• **Internal Synthesis:** \(decision)\n"
             }
-        }
-        
-        // The top-level decision is the final response
-        if let finalResponse = cognitiveResult["syntra_decision"] as? String {
-            response += "- Syntra (Final Response): " + finalResponse + ".\n"
+            
+            if let converged = consciousness["converged_state"] as? String {
+                let readableConverged = converged.replacingOccurrences(of: "_", with: " ")
+                    .replacingOccurrences(of: "→", with: " leading to ")
+                    .replacingOccurrences(of: "⟷", with: " balanced with ")
+                response += "• **Convergence:** \(readableConverged)\n"
+            }
         }
         
         if let confidence = cognitiveResult["decision_confidence"] as? Double {
-            response += "- Confidence: " + String(format: "%.2f", confidence * 100) + "%\n"
+            response += "• **Confidence:** \(String(format: "%.1f%%", confidence * 100))\n"
         }
         
         if let respondingBrain = cognitiveResult["responding_brain"] as? String {
-            response += "- Responding Brain: " + respondingBrain + "\n"
+            response += "• **Primary Responder:** \(respondingBrain.replacingOccurrences(of: "_", with: " "))\n"
         }
         
         return response
@@ -583,6 +588,8 @@ public class SyntraConversationEngine {
     }
 }
 
+// MARK: - Public Conversational API
+
 // Global conversation engine - using MainActor for concurrency safety
 @available(macOS 26.0, *)
 @MainActor
@@ -617,7 +624,6 @@ public func clearSyntraConversation() {
 public func getSyntraPerformanceReport() -> [String: Any] {
     return globalConversationEngine.getPerformanceReport()
 }
-
 // MARK: - Stateless API Mode for Server
 
 // NOTE: Stateless chat entrypoint used by Vapor server to prevent context bleed between requests.
