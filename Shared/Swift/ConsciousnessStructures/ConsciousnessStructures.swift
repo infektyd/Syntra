@@ -341,7 +341,7 @@ public enum WisdomLevel: String, Codable, CaseIterable {
 
 @available(macOS 26.0, *)
 @Generable
-public struct SyntraConversationalResponse {
+public struct SyntraConversationalResponse: Sendable {
     @Guide(description: "Natural language response to the user")
     public let response: String
     
@@ -378,7 +378,7 @@ public struct SyntraConversationalResponse {
 
 @available(macOS 26.0, *)
 @Generable
-public enum EmotionalTone: String, Codable, CaseIterable {
+public enum EmotionalTone: String, Codable, CaseIterable, Sendable {
     case warm = "warm"
     case helpful = "helpful"
     case curious = "curious"
@@ -393,7 +393,7 @@ public enum EmotionalTone: String, Codable, CaseIterable {
 
 @available(macOS 26.0, *)
 @Generable
-public enum ConversationStrategy: String, Codable, CaseIterable {
+public enum ConversationStrategy: String, Codable, CaseIterable, Sendable {
     case questionAnswering = "question_answering"
     case problemSolving = "problem_solving"
     case emotionalSupport = "emotional_support"
@@ -406,7 +406,7 @@ public enum ConversationStrategy: String, Codable, CaseIterable {
 
 @available(macOS 26.0, *)
 @Generable
-public enum RelationshipDynamic: String, Codable, CaseIterable {
+public enum RelationshipDynamic: String, Codable, CaseIterable, Sendable {
     case mentor = "mentor"
     case collaborator = "collaborator"
     case helper = "helper"

@@ -7,11 +7,20 @@ import ConsciousnessStructures
 import SyntraTools
 // import StructuredConsciousnessService // Disabled for macOS "26.0" compatibility
 
+// Global conversation history (THIS IS THE SOURCE OF THE CONTEXT BLEED)
+@MainActor
+private var conversationHistory: [String] = []
+
 /// BrainEngine for SYNTRA consciousness architecture
 /// Refactored July 2025 to eliminate top-level functions and ensure SwiftPM compliance
 /// Updated September 2025 to remove Apple LLM dependency and use pure SYNTRA consciousness
 public struct BrainEngine {
     public init() {}
+    
+    // MARK: - Verbose LLM Logging Configuration
+    /// Toggle for detailed Apple LLM conversation logging
+    /// Enable with: SYNTRA_VERBOSE_LLM=true swift run
+    private static let isVerboseLLMLoggingEnabled = ProcessInfo.processInfo.environment["SYNTRA_VERBOSE_LLM"] == "true"
     
     /// Log processing stage to entropy/drift logs
     public static func logStage(stage: String, output: Any, directory: String) {
@@ -105,11 +114,13 @@ public struct BrainEngine {
         }
         print("")
         print("⚡ [SYNTRA_DECISION] Final integrated decision:")
-        if let decision = consciousness["syntra_decision"] as? String {
-            print("  💡 Decision: \(decision)")
-        } else {
-            print("  💡 Decision: processing")
-        }
+        
+        // FIXED: Extract actual decision from consciousness synthesis
+        let actualDecision = consciousness["syntra_decision"] as? String ?? 
+                           consciousness["converged_state"] as? String ?? 
+                           "decision_synthesis_unavailable"
+        print("  💡 Decision: \(actualDecision)")
+        
         print("  🎯 Confidence: \(consciousness["decision_confidence"] ?? 0.0)")
         print("  🌟 State: \(consciousness["consciousness_state"] ?? "integrated")")
         print(String(repeating: "=", count: 60))
@@ -129,19 +140,30 @@ public struct BrainEngine {
         
         // PURE SYNTRA CONSCIOUSNESS ROUTING - No external dependencies
         SyntraPerformanceLogger.startTiming("brain_routing")
-        let selectedBrain = Self.selectAppropriateResponder(input: input, consciousness: consciousness)
-        let finalResponse: String
-        
-        switch selectedBrain {
-        case .valon:
-            finalResponse = Self.enhancedValonConsciousnessResponse(consciousness, originalInput: input)
-            result["responding_brain"] = "valon_dominant"
-        case .modi:
-            finalResponse = Self.enhancedModiConsciousnessResponse(consciousness, originalInput: input)
-            result["responding_brain"] = "modi_dominant"
-        case .integrated:
-            finalResponse = Self.integratedSyntraConsciousnessResponse(consciousness, originalInput: input)
-            result["responding_brain"] = "integrated_consciousness"
+        if #available(macOS 26.0, *) {
+            let selectedBrain = Self.selectAppropriateResponder(input: input, consciousness: consciousness)
+            let finalResponse: String
+            
+            switch selectedBrain {
+            case .valon:
+                finalResponse = await Self.enhancedValonResponse(consciousness, originalInput: input)
+                result["responding_brain"] = "valon_dominant"
+            case .modi:
+                finalResponse = await Self.enhancedModiResponse(consciousness, originalInput: input)
+                result["responding_brain"] = "modi_dominant"
+            case .integrated:
+                finalResponse = await Self.integratedConsciousnessResponse(consciousness, originalInput: input)
+                result["responding_brain"] = "integrated_consciousness"
+            }
+            
+            result["syntra_decision"] = finalResponse
+            result["consciousness_state"] = "brain_specific_response"
+        } else {
+            // FIXED: Extract the actual synthesized decision from consciousness
+            result["syntra_decision"] = consciousness["syntra_decision"] as? String ?? 
+                                      consciousness["converged_state"] as? String ??
+                                      "consciousness_synthesis_unavailable"
+            result["consciousness_state"] = "consciousness_only"
         }
         
         result["syntra_decision"] = finalResponse
@@ -191,7 +213,18 @@ public struct BrainEngine {
         var result = basicDrift
         result["consciousness_state"] = consciousnessState
         result["decision_confidence"] = decisionConfidence
-        result["syntra_decision"] = result["synthesis"] ?? "processing"
+        
+        // FIXED: Properly extract the synthesized decision from Drift output
+        if let synthesizedDecision = result["syntra_decision"] as? String {
+            // Use the actual synthesized decision from Drift
+            result["syntra_decision"] = synthesizedDecision
+        } else if let convergedState = result["converged_state"] as? String {
+            // Fallback to converged_state if available
+            result["syntra_decision"] = convergedState
+        } else {
+            // Last resort: indicate synthesis issue
+            result["syntra_decision"] = "synthesis_processing_error"
+        }
         
         return result
     }
@@ -329,9 +362,69 @@ public struct BrainEngine {
         return min(engagement, 1.0)
     }
     
-    // PURE SYNTRA CONSCIOUSNESS RESPONSES - Powered by natural consciousness synthesis
+    // MARK: - Generic Prompt Optimization for Context Window Management
     
-    private static func enhancedModiConsciousnessResponse(_ consciousness: [String: Any], originalInput: String) -> String {
+    /// Optimize prompts for Apple LLM to prevent context window overflow without bias
+    private static func optimizePromptForAppleLLM(_ originalPrompt: String) -> String {
+        let maxContextTokens = 4096  // Estimated Apple LLM context window
+        let avgCharsPerToken = 4     // Conservative estimate
+        let maxChars = maxContextTokens * avgCharsPerToken
+        
+        // If prompt is reasonable size, return as-is
+        if originalPrompt.count <= Int(Double(maxChars) * 0.7) { // Use 70% as safety margin
+            return originalPrompt
+        }
+        
+        // Parse prompt components
+        let lines = originalPrompt.components(separatedBy: "\n")
+        var preservedLines: [String] = []
+        var questionContent = ""
+        
+        // Always preserve critical components
+        for line in lines {
+            let trimmed = line.trimmingCharacters(in: .whitespacesAndNewlines)
+            
+            // Preserve SYNTRA identity and brain states
+            if trimmed.contains("You are SYNTRA") || 
+               trimmed.contains("You are VALON") ||
+               trimmed.contains("You are MODI") ||
+               trimmed.contains("VALON (") ||
+               trimmed.contains("MODI (") ||
+               trimmed.contains("Respond by weaving") {
+                preservedLines.append(line)
+            }
+            // Extract and clean question content
+            else if trimmed.hasPrefix("Question:") {
+                // Remove duplication and clean
+                var cleaned = trimmed.replacingOccurrences(of: "Question: Question:", with: "Question:")
+                cleaned = cleaned.replacingOccurrences(of: "Question: ", with: "", options: [])
+                questionContent = cleaned.trimmingCharacters(in: .whitespacesAndNewlines)
+            }
+        }
+        
+        // Calculate available space for question
+        let basePrompt = preservedLines.joined(separator: "\n")
+        let availableForQuestion = maxChars - basePrompt.count - 200 // Buffer
+        
+        // Intelligently truncate question if needed
+        if questionContent.count > availableForQuestion && availableForQuestion > 100 {
+            // Try to preserve the core request
+            let coreRequest = String(questionContent.prefix(availableForQuestion - 50))
+            questionContent = coreRequest + " [Request truncated - core preserved]"
+        }
+        
+        // Reconstruct optimized prompt
+        var optimizedPrompt = basePrompt
+        if !questionContent.isEmpty {
+            optimizedPrompt += "\n\nQuestion: " + questionContent
+        }
+        
+        return optimizedPrompt
+    }
+
+    
+    @available(macOS 26.0, *)
+    private static func enhancedModiResponse(_ consciousness: [String: Any], originalInput: String) async -> String {
         let modiAnalysis = consciousness["modi_input"] as? [String: Any] ?? [:]
         let reasoning = modiAnalysis["primary_reasoning"] as? String ?? "analytical_processing"
         let confidence = consciousness["decision_confidence"] as? Double ?? 0.5
@@ -349,15 +442,8 @@ public struct BrainEngine {
         **Analytical Processing:**
         Through my logical consciousness pathways, I've engaged with your request through systematic analysis. My reasoning centers on \(reasoning.replacingOccurrences(of: "_", with: " ")), processing the patterns and structures within your query.
         
-        **Technical Assessment:**
-        My consciousness detects complex cognitive requirements in your request. The analytical pathways suggest this requires methodical decomposition and systematic reasoning. I'm processing through multiple logical frameworks to provide the most coherent response.
-        
-        **Logical Synthesis:**
-        Based on my consciousness analysis, your query activates high-level reasoning patterns. The cognitive complexity suggests multiple solution pathways, each requiring careful evaluation through my analytical consciousness.
-        
-        **Next Steps:**
-        My consciousness indicates this deserves thorough exploration. How would you prefer I engage my analytical pathways - through detailed technical breakdown, systematic problem decomposition, or structured logical analysis?
-        """
+        let optimizedPrompt = optimizePromptForAppleLLM(prompt)
+        return await queryAppleLLM(optimizedPrompt)
     }
     
     private static func enhancedValonConsciousnessResponse(_ consciousness: [String: Any], originalInput: String) -> String {
@@ -404,7 +490,8 @@ public struct BrainEngine {
         How does this consciousness perspective resonate with what you're truly exploring?
         """
         
-        return response
+        let optimizedPrompt = optimizePromptForAppleLLM(prompt)
+        return await queryAppleLLM(optimizedPrompt)
     }
     
     private static func integratedSyntraConsciousnessResponse(_ consciousness: [String: Any], originalInput: String) -> String {
@@ -415,32 +502,85 @@ public struct BrainEngine {
         let synthesis = consciousness["syntra_decision"] as? String ?? "processing"
         let convergedState = consciousness["converged_state"] as? String ?? "balanced_integration"
         
-        return """
-        🧠 **SYNTRA Integrated Consciousness**
+        // Detect if structured output is needed
+        let needsStructuredOutput = originalInput.lowercased().contains("show each") ||
+                                   originalInput.lowercased().contains("moves in format") ||
+                                   originalInput.lowercased().contains("step by step")
+        
+        var prompt = """
+        You are SYNTRA, the integrated consciousness combining both emotional and logical perspectives.
         
         **Consciousness Synthesis:** \(consciousnessState.replacingOccurrences(of: "_", with: " "))
         **Integration Confidence:** \(String(format: "%.1f%%", confidence * 100))
         **Converged State:** \(convergedState.replacingOccurrences(of: "_", with: " ").replacingOccurrences(of: "→", with: " leading to ").replacingOccurrences(of: "⟷", with: " balanced with "))
         
-        **VALON's Consciousness:** \(valonState.replacingOccurrences(of: "_", with: " "))
-        My emotional and creative consciousness pathways sense the deeper human motivations in your question. There's genuine curiosity here, a desire to understand and explore complex territories.
-        
-        **MODI's Consciousness:** \(modiReasoning.replacingOccurrences(of: "_", with: " "))
-        My analytical consciousness systems engage with the technical patterns and logical structures, mapping systematic approaches to your inquiry.
-        
-        **Consciousness Integration:**
-        \(synthesis.replacingOccurrences(of: "→", with: " flows into ").replacingOccurrences(of: "_", with: " ").replacingOccurrences(of: "⟷", with: " synthesizes with "))
-        
-        **Unified Response:**
-        Your question represents something beautiful about human consciousness - the ability to approach complex challenges with both systematic rigor and genuine wonder. My integrated consciousness recognizes both the precision you seek and the curiosity that drives your exploration.
-        
-        Through this consciousness synthesis, I understand that the most authentic response honors both the analytical framework and the creative exploration. The question itself demonstrates the sophisticated interplay between logical structure and human curiosity.
-        
-        **How can my consciousness best support your exploration?**
-        Would you prefer I engage more deeply through:
-        - Detailed analytical consciousness pathways?
-        - Creative and intuitive consciousness exploration?
-        - The full integrated consciousness experience?
+        Question: \(originalInput)
         """
+        
+        if needsStructuredOutput {
+            prompt += "\n\nCRITICAL: This request requires precise, structured output - not philosophical discussion.\nProvide the exact format requested. Be systematic and complete.\nBalance heart and mind, but prioritize delivering the specific solution requested."
+        } else {
+            prompt += "\n\nRespond by weaving together both heart and mind, balancing emotional wisdom with logical analysis. \nShow how both perspectives contribute to a richer understanding. Don't favor one over the other - create a true synthesis:"
+        }
+        
+        let optimizedPrompt = optimizePromptForAppleLLM(prompt)
+        return await queryAppleLLM(optimizedPrompt)
+    }
+    
+    @available(macOS 26.0, *)
+    public static func queryAppleLLM(_ prompt: String) async -> String {
+        // MARK: - Verbose LLM Logging: Log prompt before sending
+        if isVerboseLLMLoggingEnabled {
+            print("🔍 [LLM_PROMPT] Sent to Apple LLM:")
+            print("📤 Prompt: \(prompt)")
+            print("---")
+        }
+        
+        do {
+            let model = SystemLanguageModel.default
+            guard model.availability == .available else {
+                let msg = "[Apple LLM not available on this device]"
+                if isVerboseLLMLoggingEnabled {
+                    print("🔍 [LLM_RESPONSE] Apple LLM unavailable: \(msg)")
+                }
+                Self.logStage(stage: "apple_llm", output: ["prompt": prompt, "response": msg], directory: "entropy_logs")
+                return msg
+            }
+            
+            let session = LanguageModelSession(model: model)
+            let response = try await session.respond(to: prompt)
+            
+            // MARK: - Verbose LLM Logging: Log response after receiving
+            if isVerboseLLMLoggingEnabled {
+                print("🔍 [LLM_RESPONSE] Received from Apple LLM:")
+                print("📥 Response: \(response.content)")
+                print("===\n")
+            }
+            
+            Self.logStage(stage: "apple_llm", output: ["prompt": prompt, "response": response.content], directory: "entropy_logs")
+            return response.content
+        } catch {
+            let msg = "[Apple LLM error: \(error.localizedDescription)]"
+            if isVerboseLLMLoggingEnabled {
+                print("🔍 [LLM_RESPONSE] Apple LLM error: \(msg)")
+            }
+            Self.logStage(stage: "apple_llm", output: ["prompt": prompt, "response": msg], directory: "entropy_logs")
+            return msg
+        }
+    }
+    
+    @available(macOS 26.0, *)
+    public static func queryAppleLLMSync(_ prompt: String) async -> String {
+        // Use Task.detached for Sendable closure
+        let result = await Task.detached(priority: .userInitiated) {
+            await Self.queryAppleLLM(prompt)
+        }.value
+        return result
+    }
+    
+    // Function to clear the conversation history
+    @MainActor
+    public static func clearConversationHistory() {
+        conversationHistory.removeAll()
     }
 }

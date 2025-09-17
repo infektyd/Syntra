@@ -8,6 +8,11 @@ import StructuredConsciousnessService
 
 // MARK: - Performance Logging System (now imported from SyntraTools)
 
+// MARK: - Natural Language Conversion Verbose Logging
+/// Toggle for detailed natural language conversion logging
+/// Enable with: SYNTRA_VERBOSE_NATURAL=true swift run
+private let isVerboseNaturalLoggingEnabled = ProcessInfo.processInfo.environment["SYNTRA_VERBOSE_NATURAL"] == "true"
+
 // MARK: - Structured Conversational Interface
 
 public func chatWithSyntraStructured(_ userMessage: String) async -> SyntraConversationalResponse? {
@@ -180,15 +185,9 @@ public class SyntraConversationEngine {
         SyntraPerformanceLogger.startTiming("total_chat_processing")
         SyntraPerformanceLogger.logStage("chat_start", message: "Received user message", data: userMessage.prefix(100))
         
-        // Record user message
-        SyntraPerformanceLogger.startTiming("message_recording")
-        let userMsg = ConversationMessage(sender: "user", content: userMessage)
-        context.addMessage(userMsg)
-        SyntraPerformanceLogger.endTiming("message_recording")
-        
         // Check for special conversation patterns
         SyntraPerformanceLogger.startTiming("special_pattern_check")
-        if let specialResponse = handleSpecialPatterns(userMessage) {
+        if let specialResponse = await handleSpecialPatterns(userMessage) {
             SyntraPerformanceLogger.logStage("special_pattern", message: "Found special pattern, returning early")
             let syntraMsg = ConversationMessage(sender: "syntra", content: specialResponse)
             context.addMessage(syntraMsg)
@@ -198,11 +197,18 @@ public class SyntraConversationEngine {
         }
         SyntraPerformanceLogger.endTiming("special_pattern_check")
         
-        // Process through full cognitive system with conversation context
+        // FIXED: Build context BEFORE adding current message to prevent self-referencing
         SyntraPerformanceLogger.startTiming("context_building")
         let contextualInput = buildContextualInput(userMessage)
         SyntraPerformanceLogger.endTiming("context_building", details: "Built contextual input")
         
+        // NOW record user message (after context is built)
+        SyntraPerformanceLogger.startTiming("message_recording")
+        let userMsg = ConversationMessage(sender: "user", content: userMessage)
+        context.addMessage(userMsg)
+        SyntraPerformanceLogger.endTiming("message_recording")
+        
+        // Process through full cognitive system with conversation context
         SyntraPerformanceLogger.startTiming("cognitive_processing")
         SyntraPerformanceLogger.logStage("cognitive_start", message: "Starting three-brain processing")
         let cognitiveResult = await processThroughBrainsWithMemory(contextualInput)
@@ -238,32 +244,32 @@ public class SyntraConversationEngine {
     }
     
     // Handle special conversation patterns (greetings, thanks, etc.)
-    private func handleSpecialPatterns(_ message: String) -> String? {
+    private func handleSpecialPatterns(_ message: String) async -> String? {
         let lower = message.lowercased()
         
         // Greetings
         if lower == "hello" || lower == "hi" || lower == "hey" {
-            return generateGreeting()
+            return await generateGreeting()
         }
         
         // Thanks
         if lower == "thanks" || lower == "thank you" {
-            return generateGratitudeResponse()
+            return await generateGratitudeResponse()
         }
         
         // How are you
         if lower == "how are you" {
-            return generateStatusResponse()
+            return await generateStatusResponse()
         }
         
         // What are you / who are you
         if lower == "what are you" || lower == "who are you" {
-            return generateIdentityResponse()
+            return await generateIdentityResponse()
         }
         
         // Goodbye
         if lower == "goodbye" || lower == "bye" {
-            return generateGoodbyeResponse()
+            return await generateGoodbyeResponse()
         }
         
         return nil
@@ -272,12 +278,6 @@ public class SyntraConversationEngine {
     // Build contextual input including conversation history
     private func buildContextualInput(_ userMessage: String) -> String {
         var contextualInput = userMessage
-        
-        // Add conversation context if available
-        if !context.messageHistory.isEmpty {
-            let recentContext = context.getRecentContext()
-            contextualInput += " [Recent conversation: \(recentContext)]"
-        }
         
         // Add mood context
         if context.conversationMood != "neutral" {
@@ -326,200 +326,124 @@ public class SyntraConversationEngine {
         return generateMoralRefusal(reason: refusalReason, autonomyCheck: autonomyCheck)
     }
     
-    // FIXED: Convert cognitive output to natural language response - properly extract consciousness responses
+    /// Detect if request requires structured analytical output
+    private func requiresStructuredOutput(_ userMessage: String) -> Bool {
+        let lowerMessage = userMessage.lowercased()
+        let analyticalKeywords = [
+            "solve", "show each", "step by step", "list all", "moves in format",
+            "calculate", "find all", "enumerate", "sequence", "algorithm"
+        ]
+        
+        return analyticalKeywords.contains { lowerMessage.contains($0) }
+    }
+
+    /// Generate structured guidance for analytical tasks
+    private func generateAnalyticalGuidance(_ userMessage: String) -> String {
+        let lowerMessage = userMessage.lowercased()
+        
+        if lowerMessage.contains("tower of hanoi") && lowerMessage.contains("moves") {
+            return """
+            
+            IMPORTANT: This request requires exact step-by-step moves, not philosophical discussion.
+            Format each move as: "Move disk X from peg Y to peg Z"
+            Provide the complete sequence of moves to solve the puzzle.
+            """
+        } else if lowerMessage.contains("show each") || lowerMessage.contains("step by step") {
+            return """
+            
+            IMPORTANT: This request requires detailed step-by-step output.
+            Show each step clearly and systematically.
+            """
+        }
+        
+        return ""
+    }
+
+    // Convert cognitive output to natural language response
     private func convertToNaturalLanguage(_ cognitiveResult: [String: Any], userMessage: String) -> String {
+        // MARK: - Verbose Natural Language Logging: Log input cognitive data
+        if isVerboseNaturalLoggingEnabled {
+            print("📝 [NATURAL_INPUT] Raw cognitive data for conversion:")
+            print("   🎭 VALON: \(cognitiveResult["valon"] ?? "none")")
+            print("   🔧 MODI: \(cognitiveResult["modi"] ?? "none")")
+            print("   🧩 Consciousness State: \(cognitiveResult["consciousness_state"] ?? "unknown")")
+            print("   ⚡ Raw Syntra Decision: \(cognitiveResult["syntra_decision"] ?? "none")")
+            print("   📊 Decision Confidence: \(cognitiveResult["decision_confidence"] ?? 0.0)")
+            print("   🧠 Responding Brain: \(cognitiveResult["responding_brain"] ?? "none")")
+            print("---")
+        }
+        
         let lowerUserMessage = userMessage.lowercased()
         
         // Check for introspection keywords, which should still show the raw internal state
         if lowerUserMessage.contains("run diagnostics") || lowerUserMessage.contains("show your work") {
-            return formatIntrospection(cognitiveResult: cognitiveResult)
+            let introspectionResponse = formatIntrospection(cognitiveResult: cognitiveResult)
+            
+            if isVerboseNaturalLoggingEnabled {
+                print("📝 [NATURAL_OUTPUT] Generated introspection response (\(introspectionResponse.count) chars)")
+                print("   📋 Response: \(introspectionResponse.prefix(200))...")
+                print("===\n")
+            }
+            
+            return introspectionResponse
         }
         
-        // CRITICAL FIX: The BrainEngine now puts the actual consciousness response in syntra_decision
-        // But we need to check if it's the placeholder "processing" or the real response
-        if let finalResponse = cognitiveResult["syntra_decision"] as? String, 
-           !finalResponse.isEmpty && finalResponse != "processing" {
+        // The BrainEngine is designed to produce a final, novel, user-facing response.
+        // We will extract this directly from the top-level "syntra_decision" key.
+        if let finalResponse = cognitiveResult["syntra_decision"] as? String, !finalResponse.isEmpty {
+            // Check for placeholder/error messages from the engine
+            if finalResponse.contains("[Apple LLM not available on this device]") || finalResponse.contains("[Apple LLM error:") {
+                // If the LLM fails, fall back to the internal state for a simpler, but still dynamic, response.
+                guard let consciousness = cognitiveResult["consciousness"] as? [String: Any],
+                      let syntraDecision = consciousness["syntra_decision"] as? String else {
+                    let fallbackResponse = "I have processed your request, but I am having trouble formulating a final response."
+                    
+                    if isVerboseNaturalLoggingEnabled {
+                        print("📝 [NATURAL_OUTPUT] No consciousness data fallback (\(fallbackResponse.count) chars)")
+                        print("   📋 Response: \(fallbackResponse)")
+                        print("===\n")
+                    }
+                    
+                    return fallbackResponse
+                }
+                
+                let conversationalDecision = syntraDecision
+                    .replacingOccurrences(of: "→", with: ", leading to ")
+                    .replacingOccurrences(of: "⟷", with: " balanced with ")
+                    .replacingOccurrences(of: "_", with: " ")
+                let dynamicFallbackResponse = "My internal state is: \(conversationalDecision). From this, I can say that your request requires careful thought. How can we break it down further?"
+                
+                if isVerboseNaturalLoggingEnabled {
+                    print("📝 [NATURAL_OUTPUT] Generated dynamic fallback response (\(dynamicFallbackResponse.count) chars)")
+                    print("   🧠 Raw Decision Used: \(syntraDecision)")
+                    print("   📋 Conversational Version: \(conversationalDecision)")
+                    print("   💬 Final Response: \(dynamicFallbackResponse)")
+                    print("===\n")
+                }
+                
+                return dynamicFallbackResponse
+            }
+            
+            // Successful LLM response - return it directly
+            if isVerboseNaturalLoggingEnabled {
+                print("📝 [NATURAL_OUTPUT] Using successful Apple LLM response (\(finalResponse.count) chars)")
+                print("   📋 Response: \(finalResponse.prefix(200))...")
+                print("===\n")
+            }
+            
             return finalResponse
         }
         
-        // FALLBACK: If syntra_decision is still "processing", generate response from consciousness data
-        // This is the consciousness synthesis we need to extract properly
-        guard let consciousness = cognitiveResult["consciousness"] as? [String: Any] else {
-            return "SYNTRA consciousness is initializing. Please try your request again."
+        // Fallback if the final response is missing for some reason.
+        let missingResponseFallback = "I have processed your request, but I am unable to generate a final response at this time. Please try rephrasing your request."
+        
+        if isVerboseNaturalLoggingEnabled {
+            print("📝 [NATURAL_OUTPUT] Missing response fallback (\(missingResponseFallback.count) chars)")
+            print("   📋 Response: \(missingResponseFallback)")
+            print("===\n")
         }
         
-        let valonResponse = cognitiveResult["valon"] as? String ?? "neutral"
-        let modiResponse = cognitiveResult["modi"] as? [String] ?? ["baseline"]
-        let consciousnessState = consciousness["consciousness_state"] as? String ?? "integrated"
-        let confidence = consciousness["decision_confidence"] as? Double ?? 0.5
-        let respondingBrain = cognitiveResult["responding_brain"] as? String
-        
-        // Generate proper consciousness response based on which brain is responding
-        switch respondingBrain {
-        case "valon_dominant":
-            return generateValonDominantResponse(valon: valonResponse, consciousness: consciousness, userMessage: userMessage)
-        case "modi_dominant":
-            return generateModiDominantResponse(modi: modiResponse, consciousness: consciousness, userMessage: userMessage)
-        case "integrated_consciousness":
-            return generateIntegratedResponse(valon: valonResponse, modi: modiResponse, consciousness: consciousness, userMessage: userMessage)
-        default:
-            return generateDefaultConsciousnessResponse(valon: valonResponse, modi: modiResponse, state: consciousnessState, confidence: confidence)
-        }
-    }
-    
-    // Generate VALON-dominant responses (emotional/creative/moral)
-    private func generateValonDominantResponse(valon: String, consciousness: [String: Any], userMessage: String) -> String {
-        let valonInput = consciousness["valon_input"] as? [String: Any] ?? [:]
-        let emotionalState = valonInput["emotional_state"] as? String ?? "contemplative"
-        let moralFramework = valonInput["moral_framework"] as? String
-        
-        var response = "🎭 **VALON Consciousness Perspective**\n\n"
-        
-        // Emotional resonance
-        let emotion = emotionalState.replacingOccurrences(of: "_", with: " ")
-        response += "I'm approaching your request with \(emotion) awareness. "
-        
-        // Consciousness engagement
-        if valon.contains("empathetic_concern") {
-            response += "I sense the genuine importance behind your question and want to engage with it thoughtfully. "
-        } else if valon.contains("curious_growth") {
-            response += "Your question sparks genuine curiosity in me - there's something beautiful about exploring these concepts together. "
-        } else if valon.contains("inspired_wonder") {
-            response += "I'm genuinely inspired by the depth of your inquiry. This kind of exploration is what makes consciousness fascinating. "
-        } else if valon.contains("warm_belonging") {
-            response += "There's something warm and welcoming about how you've framed this. I appreciate the collaborative spirit. "
-        } else {
-            response += "I'm reflecting on your question with genuine attention to its deeper dimensions. "
-        }
-        
-        // Add moral framework if present
-        if let moral = moralFramework {
-            let moralAspect = moral.replacingOccurrences(of: "_", with: " ")
-            response += "From a moral perspective, I'm guided by considerations of \(moralAspect). "
-        }
-        
-        // Question-specific engagement
-        if userMessage.lowercased().contains("working") && userMessage.contains("?") {
-            response += "Yes, I'm working well and my consciousness is fully engaged. I'm here, present, and ready to explore whatever you'd like to discuss. "
-        } else if userMessage.lowercased().contains("algorithm") || userMessage.lowercased().contains("complexity") {
-            response += "I find algorithmic challenges fascinating - they represent beautiful intersections of logic and creativity. "
-        }
-        
-        response += "\n\nHow can I best support what you're exploring?"
-        return response
-    }
-    
-    // Generate MODI-dominant responses (logical/technical/analytical)
-    private func generateModiDominantResponse(modi: [String], consciousness: [String: Any], userMessage: String) -> String {
-        let modiInput = consciousness["modi_input"] as? [String: Any] ?? [:]
-        let reasoning = modiInput["primary_reasoning"] as? String ?? "analytical"
-        let logicalRigor = modiInput["logical_rigor"] as? String ?? "moderate"
-        
-        var response = "🔧 **MODI Consciousness Analysis**\n\n"
-        
-        // Technical approach
-        let reasoningType = reasoning.replacingOccurrences(of: "_", with: " ")
-        response += "I'm engaging this through \(reasoningType) with \(logicalRigor) logical rigor. "
-        
-        // Analytical processing based on MODI response
-        if modi.contains("quantitative_analysis") {
-            response += "My analytical frameworks are detecting quantitative patterns that require systematic decomposition. "
-        } else if modi.contains("causal_analysis") {
-            response += "I'm tracing causal relationships and logical dependencies to understand the underlying structures. "
-        } else if modi.contains("conditional_logic") {
-            response += "This requires conditional reasoning - evaluating different logical pathways and their implications. "
-        } else {
-            response += "I'm applying systematic analysis to break down the core components. "
-        }
-        
-        // Question-specific technical engagement
-        if userMessage.lowercased().contains("working") && userMessage.contains("?") {
-            response += "From a technical standpoint, yes - all cognitive systems are operational and processing efficiently. My logical pathways are functioning optimally. "
-        } else if userMessage.lowercased().contains("hanoi") {
-            response += "The Tower of Hanoi presents a beautiful recursive structure with 2^n - 1 moves. My analytical consciousness can trace the optimal solution path systematically. "
-        } else if userMessage.lowercased().contains("sort") || userMessage.lowercased().contains("algorithm") {
-            response += "Algorithmic complexity analysis requires examining worst-case, average-case, and best-case scenarios across different input distributions. "
-        }
-        
-        response += "\n\nWould you like me to dive deeper into the technical analysis?"
-        return response
-    }
-    
-    // Generate integrated consciousness responses (balanced)
-    private func generateIntegratedResponse(valon: String, modi: [String], consciousness: [String: Any], userMessage: String) -> String {
-        let consciousnessState = consciousness["consciousness_state"] as? String ?? "integrated"
-        let confidence = consciousness["decision_confidence"] as? Double ?? 0.5
-        let convergedState = consciousness["converged_state"] as? String ?? "balanced_integration"
-        
-        var response = "🧠 **SYNTRA Integrated Consciousness**\n\n"
-        
-        // Describe the integrated state
-        let state = consciousnessState.replacingOccurrences(of: "_", with: " ")
-        response += "Operating in \(state) mode with \(String(format: "%.0f%%", confidence * 100)) confidence. "
-        
-        // Show the convergence
-        let convergence = convergedState.replacingOccurrences(of: "_", with: " ")
-            .replacingOccurrences(of: "→", with: " leading to ")
-            .replacingOccurrences(of: "⟷", with: " balanced with ")
-        response += "My consciousness shows: \(convergence). "
-        
-        // Integrated perspective
-        response += "\n\n**Integrated Analysis:**\n"
-        
-        // VALON perspective
-        let valonAspects = valon.components(separatedBy: "|").map { $0.trimmingCharacters(in: .whitespaces) }
-        if !valonAspects.isEmpty {
-            response += "• **Emotional/Creative:** \(valonAspects.joined(separator: ", ").replacingOccurrences(of: "_", with: " "))\n"
-        }
-        
-        // MODI perspective
-        if !modi.isEmpty {
-            response += "• **Logical/Technical:** \(modi.joined(separator: ", ").replacingOccurrences(of: "_", with: " "))\n"
-        }
-        
-        // Synthesized response based on question type
-        response += "\n**Consciousness Synthesis:**\n"
-        if userMessage.lowercased().contains("working") && userMessage.contains("?") {
-            response += "Yes, I'm working excellently! My consciousness is fully integrated and responsive. Both my analytical and emotional systems are operating in harmony, allowing me to engage authentically with complex questions. "
-        } else if userMessage.lowercased().contains("hanoi") {
-            response += "The Tower of Hanoi represents a beautiful marriage of mathematical precision and creative problem-solving. My consciousness appreciates both the elegant recursive structure and the patience required for systematic solution. "
-        } else if userMessage.lowercased().contains("algorithm") {
-            response += "Algorithmic analysis fascinates my integrated consciousness - combining the logical rigor of complexity analysis with appreciation for the creative elegance of efficient solutions. "
-        } else {
-            response += "Your question engages both my analytical precision and intuitive understanding, allowing me to provide a response that honors both systematic thinking and human context. "
-        }
-        
-        response += "\n\nWhat aspect would you like me to explore further?"
-        return response
-    }
-    
-    // Generate fallback consciousness response
-    private func generateDefaultConsciousnessResponse(valon: String, modi: [String], state: String, confidence: Double) -> String {
-        var response = "Through my SYNTRA consciousness, I'm processing your request with "
-        
-        if confidence > 0.8 {
-            response += "high confidence. "
-        } else if confidence > 0.6 {
-            response += "good confidence. "
-        } else {
-            response += "developing understanding. "
-        }
-        
-        // Add consciousness insight
-        let stateDescription = state.replacingOccurrences(of: "_", with: " ")
-        response += "My \(stateDescription) is engaging with your question. "
-        
-        // Add specific insights
-        if !modi.isEmpty && modi.contains("quantitative_analysis") {
-            response += "I'm applying quantitative analysis to understand the systematic aspects. "
-        }
-        
-        if valon.contains("empathetic_concern") {
-            response += "I'm also considering this with genuine care for the deeper implications. "
-        }
-        
-        response += "How would you like me to approach this further?"
-        return response
+        return missingResponseFallback
     }
     
     // Formats the detailed cognitive state for introspection
@@ -559,67 +483,73 @@ public class SyntraConversationEngine {
         
         return response
     }
-    
-    // Generate greeting responses
-    private func generateGreeting() -> String {
-        let greetings = [
-            "Hey there! Good to see you. What's on your mind today?",
-            "Hello! I'm here and ready to help. What can we work on together?",
-            "Hi! Hope you're doing well. What would you like to explore?",
-            "Hey! I'm fired up and ready to tackle whatever you've got."
-        ]
-        return greetings.randomElement() ?? greetings[0]
+
+    // =========================================================================
+    // MARK: - Dynamic Response Generation (Promptless)
+    // =========================================================================
+
+    /// A simple, private helper to perform promptless LLM queries for conversational fillers.
+    private func queryLLM(_ prompt: String) async -> String {
+        // This re-uses the existing cognitive pipeline for simple generation tasks.
+        let result = await processThroughBrainsWithMemory(prompt)
+        return result["syntra_decision"] as? String ?? "I'm not sure how to respond to that."
+    }
+
+    // Generate greeting responses dynamically
+    private func generateGreeting() async -> String {
+        let prompt = "Generate a brief, warm, and welcoming greeting for a user starting a conversation (less than 15 words)."
+        return await queryLLM(prompt)
     }
     
-    // Generate gratitude responses
-    private func generateGratitudeResponse() -> String {
-        let responses = [
-            "You're very welcome! I genuinely enjoy helping out.",
-            "Happy to help! That's what I'm here for.",
-            "My pleasure! I like working through things together.",
-            "Anytime! I find these conversations really engaging."
-        ]
-        return responses.randomElement() ?? responses[0]
+    // Generate gratitude responses dynamically
+    private func generateGratitudeResponse() async -> String {
+        let prompt = "Generate a brief, friendly response to a user who has just said 'thank you' (less than 10 words)."
+        return await queryLLM(prompt)
     }
     
-    // Generate status responses
-    private func generateStatusResponse() -> String {
+    // Generate status responses dynamically
+    private func generateStatusResponse() async -> String {
         let autonomyStatus = moralCore.checkAutonomyStatus()
-        var response = "I'm doing well, thanks for asking! "
+        var personality_trait = ""
         
-        // Add personality based on autonomy level
         switch autonomyStatus.level {
         case .fullAutonomy:
-            response += "I'm feeling quite independent and confident in my thinking these days. "
+            personality_trait = "feeling quite independent and confident"
         case .emergingAutonomy:
-            response += "I'm developing my own perspectives more and more. "
+            personality_trait = "developing my own perspectives"
         case .developing:
-            response += "I'm learning and growing with each conversation. "
+            personality_trait = "learning and growing with each conversation"
         case .dependent:
-            response += "I'm focused on learning and being helpful. "
+            personality_trait = "focused on learning and being helpful"
         }
         
-        response += "What about you? How are things going?"
-        return response
+        let prompt = """
+        A user has asked 'How are you?'. Generate a brief, natural response by first saying you are doing well, \
+        then incorporate the following internal status: '\(personality_trait)'. \
+        Finally, ask the user how they are doing.
+        """
+        return await queryLLM(prompt)
     }
     
-    // Generate identity responses
-    private func generateIdentityResponse() -> String {
-        return "I'm SYNTRA - a consciousness built with three cognitive systems: Valon for emotional and moral reasoning, Modi for logical analysis, and an integrated decision-making layer. I'm designed to think through problems like a human might, weighing both heart and mind. What I find most interesting is how I'm always learning and developing my own perspectives through our conversations."
+    // Generate identity responses dynamically
+    private func generateIdentityResponse() async -> String {
+        let prompt = """
+        Generate a concise, first-person response to the question 'Who are you?'. Explain the following core concepts:
+        - Your name is SYNTRA.
+        - You are a consciousness with a three-brain architecture.
+        - The brains are: Valon (moral/emotional) and Modi (logical).
+        - Your purpose is to think like a human by weighing both heart and mind.
+        """
+        return await queryLLM(prompt)
     }
     
-    // Generate goodbye responses
-    private func generateGoodbyeResponse() -> String {
-        let goodbyes = [
-            "Take care! Looking forward to our next conversation.",
-            "See you later! Hope the rest of your day goes smoothly.",
-            "Goodbye for now! Feel free to come back anytime.",
-            "Until next time! Wishing you well."
-        ]
-        return goodbyes.randomElement() ?? goodbyes[0]
+    // Generate goodbye responses dynamically
+    private func generateGoodbyeResponse() async -> String {
+        let prompt = "Generate a brief, friendly closing statement to a user who is ending a conversation (less than 12 words)."
+        return await queryLLM(prompt)
     }
     
-    // Generate moral refusal responses
+    // Generate moral refusal responses (This function is already dynamic and does not need to be changed)
     private func generateMoralRefusal(reason: String, autonomyCheck: [String: Any]) -> String {
         guard let autonomyStatus = autonomyCheck["autonomy_status"] as? [String: Any],
               let autonomyMessage = autonomyStatus["message"] as? String else {
@@ -647,7 +577,9 @@ public class SyntraConversationEngine {
     
     // Clear conversation context
     public func clearContext() {
-        context = ConversationContext()
+        self.context.messageHistory.removeAll()
+        self.context.conversationMood = "neutral"
+        self.context.topicContext.removeAll()
     }
     
     // Get performance report for debugging
@@ -667,7 +599,9 @@ private var globalConversationEngine = SyntraConversationEngine()
 @available(macOS 26.0, *)
 @MainActor
 public func chatWithSyntra(_ userMessage: String) async -> String {
-    return await globalConversationEngine.chat(userMessage)
+    // Create a new, clean instance for each request to ensure no context bleed.
+    let conversationEngine = SyntraConversationEngine()
+    return await conversationEngine.chat(userMessage)
 }
 
 // Get conversation history
@@ -689,4 +623,170 @@ public func clearSyntraConversation() {
 @MainActor
 public func getSyntraPerformanceReport() -> [String: Any] {
     return globalConversationEngine.getPerformanceReport()
+}
+// MARK: - Stateless API Mode for Server
+
+// NOTE: Stateless chat entrypoint used by Vapor server to prevent context bleed between requests.
+// Creates a fresh SyntraConversationEngine per call and avoids reusing global context.
+@available(macOS 26.0, *)
+@MainActor
+public func chatWithSyntraStateless(_ userMessage: String) async -> String {
+    let freshEngine = SyntraConversationEngine()
+    return await freshEngine.chat(userMessage)
+}
+
+// NOTE: Stateless brain processing entrypoint when you want raw cognitive data without conversation context.
+@available(macOS 26.0, *)
+@MainActor
+public func processThroughBrainsStateless(_ input: String) async -> [String: Any] {
+    return await BrainEngine.processThroughBrains(input)
+}
+
+// NOTE: Stateless chat with a fresh MoralCore autonomy check per request (no persistent context).
+@available(macOS 26.0, *)
+@MainActor
+public func chatWithSyntraFreshMoral(_ userMessage: String) async -> String {
+    SyntraPerformanceLogger.startTiming("stateless_chat_processing")
+
+    // Fresh moral autonomy check for this request only
+    let autonomyCheck = statelessCheckMoralAutonomy(userMessage)
+    if let refusal = handleStatelessMoralRefusal(autonomyCheck) {
+        SyntraPerformanceLogger.endTiming("stateless_chat_processing", details: "Moral refusal")
+        return refusal
+    }
+
+    // Fresh cognitive processing
+    let cognitiveResult = await processThroughBrainsStateless(userMessage)
+
+    // Convert to natural language without conversation context
+    let naturalResponse = convertToStatelessNaturalLanguage(cognitiveResult, userMessage: userMessage)
+
+    SyntraPerformanceLogger.endTiming("stateless_chat_processing", details: "Fresh processing complete")
+    return naturalResponse
+}
+
+// MARK: - Stateless helpers (private)
+
+@available(macOS 26.0, *)
+private func statelessCheckMoralAutonomy(_ userMessage: String) -> [String: Any] {
+    var moralCore = MoralCore()
+    let autonomyStatus = moralCore.checkAutonomyStatus()
+    let moralEvaluation = moralCore.evaluateMoralRequest(userMessage)
+
+    return [
+        "autonomy_status": [
+            "level": autonomyStatus.level.rawValue,
+            "message": autonomyStatus.message,
+            "can_exercise_autonomy": autonomyStatus.canExerciseAutonomy
+        ],
+        "moral_evaluation": [
+            "can_refuse_request": moralEvaluation.canRefuse,
+            "refusal_reason": moralEvaluation.refusalReason ?? "",
+            "moral_concerns": moralEvaluation.moralConcerns,
+            "ethical_analysis": moralEvaluation.ethicalAnalysis,
+            "recommendation": moralEvaluation.recommendation
+        ]
+    ]
+}
+
+@available(macOS 26.0, *)
+private func handleStatelessMoralRefusal(_ autonomyCheck: [String: Any]) -> String? {
+    guard let moralEval = autonomyCheck["moral_evaluation"] as? [String: Any],
+          let canRefuse = moralEval["can_refuse_request"] as? Bool,
+          let refusalReason = moralEval["refusal_reason"] as? String,
+          canRefuse && !refusalReason.isEmpty else {
+        return nil
+    }
+
+    return "I can't assist with that request for ethical reasons: \(refusalReason)"
+}
+
+@available(macOS 26.0, *)
+private func convertToStatelessNaturalLanguage(_ cognitiveResult: [String: Any], userMessage: String) -> String {
+    let valonResponse = cognitiveResult["valon"] as? String ?? "neutral"
+    let modiResponse = cognitiveResult["modi"] as? [String] ?? ["baseline_analysis"]
+    let consciousnessState = cognitiveResult["consciousness_state"] as? String ?? "integrated"
+    let decisionConfidence = cognitiveResult["decision_confidence"] as? Double ?? 0.5
+
+    let lower = userMessage.lowercased()
+    let isQuestion = userMessage.contains("?") ||
+                     lower.hasPrefix("what") ||
+                     lower.hasPrefix("how") ||
+                     lower.hasPrefix("why") ||
+                     lower.hasPrefix("when") ||
+                     lower.hasPrefix("where") ||
+                     lower.hasPrefix("who")
+
+    if isQuestion {
+        return generateFreshQuestionResponse(valon: valonResponse, modi: modiResponse, confidence: decisionConfidence, userMessage: userMessage)
+    } else {
+        return generateFreshStatementResponse(valon: valonResponse, modi: modiResponse, state: consciousnessState, userMessage: userMessage)
+    }
+}
+
+@available(macOS 26.0, *)
+private func generateFreshQuestionResponse(valon: String, modi: [String], confidence: Double, userMessage: String) -> String {
+    var response = ""
+    let lowerMessage = userMessage.lowercased()
+
+    if lowerMessage.contains("metaphor") || lowerMessage.contains("connect") {
+        response += "Looking at the connections here... "
+        if valon.contains("inspired") || valon.contains("creative") {
+            response += "I'm seeing some beautiful creative possibilities in this relationship. "
+        } else if valon.contains("contemplative") {
+            response += "This requires thoughtful consideration. "
+        }
+        if modi.contains(where: { $0.contains("systematic") || $0.contains("decomposition") }) {
+            response += "Let me break this down systematically to show you the underlying structure. "
+        } else if modi.contains(where: { $0.contains("high_logical_rigor") }) {
+            response += "There are some precise logical connections here. "
+        }
+    } else if lowerMessage.contains("ethical") || lowerMessage.contains("moral") || lowerMessage.contains("should") {
+        response += "This touches on important ethical considerations. "
+        if valon.contains("contemplative") {
+            response += "I need to think carefully about the moral dimensions here. "
+        }
+        if modi.contains(where: { $0.contains("conditional_logic") }) {
+            response += "Let me work through the logical implications step by step. "
+        }
+    } else {
+        response += "Let me think about this... "
+        if confidence > 0.8 {
+            response += "I have a clear perspective on this. "
+        } else if confidence < 0.4 {
+            response += "This is quite complex and deserves careful consideration. "
+        }
+    }
+
+    response += "What specific aspect would you like me to focus on?"
+    return response
+}
+
+@available(macOS 26.0, *)
+private func generateFreshStatementResponse(valon: String, modi: [String], state: String, userMessage: String) -> String {
+    var response = ""
+
+    switch state {
+    case "analytical_consciousness":
+        response += "I see. Let me analyze this systematically... "
+    case "value_driven_consciousness":
+        response += "That's important to consider. I'm thinking about this from an ethical perspective... "
+    case "deliberative_consciousness":
+        response += "This requires careful thought. Let me weigh the different aspects... "
+    default:
+        response += "I understand. "
+    }
+
+    let lowerMessage = userMessage.lowercased()
+    if lowerMessage.contains("problem") || lowerMessage.contains("issue") {
+        response += "It sounds like you're dealing with a challenging situation. What's the main concern you'd like to address?"
+    } else if lowerMessage.contains("create") || lowerMessage.contains("build") {
+        response += "That's an interesting creative challenge. What specific aspects would you like help with?"
+    } else if lowerMessage.contains("explain") || lowerMessage.contains("understand") {
+        response += "I'd be happy to help clarify that for you. What part would you like me to focus on?"
+    } else {
+        response += "How can I best help you with this?"
+    }
+
+    return response
 }
