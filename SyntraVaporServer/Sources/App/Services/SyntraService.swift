@@ -1,5 +1,5 @@
 import Vapor
-import SyntraKit
+import SyntraRuntime
 
 actor SyntraService {
     // This function now takes the decoded request, extracts the prompt,

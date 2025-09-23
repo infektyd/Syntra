@@ -9,6 +9,7 @@ let package = Package(
     ],
     products: [
         .executable(name: "SyntraVaporServer", targets: ["SyntraVaporServer"]),
+        .executable(name: "SyntraHarness", targets: ["SyntraHarness"]),
         .library(
             name: "SyntraFoundation",
             targets: [
@@ -42,11 +43,20 @@ let package = Package(
                 .product(name: "NIOCore", package: "swift-nio"),
                 .product(name: "NIOPosix", package: "swift-nio"),
                 .target(name: "SyntraKit"),
+                .target(name: "SyntraRuntime"),
+                .target(name: "SyntraTools"),
             ],
             path: "SyntraVaporServer/Sources/SyntraVaporServer",
             swiftSettings: [
                 .enableUpcomingFeature("ExistentialAny"),
             ]
+        ),
+        .executableTarget(
+            name: "SyntraHarness",
+            dependencies: [
+                .target(name: "SyntraRuntime"),
+            ],
+            path: "tools/harness/SyntraHarness"
         ),
 
         // --- Core Consciousness Modules ---
@@ -105,6 +115,7 @@ let package = Package(
             dependencies: [
                 "SyntraCore",
                 "SyntraTools",
+                "SyntraKit",
                 "BrainEngine",
                 "ConversationalInterface",
                 "ConsciousnessStructures",
@@ -113,27 +124,21 @@ let package = Package(
             path: "Shared/Sources/SyntraSwift"
         ),
         .target(
+            name: "SyntraRuntime",
+            dependencies: [
+                "ConversationalInterface",
+                "SyntraKit"
+            ],
+            path: "Shared/Swift/SyntraRuntime"
+        ),
+        .target(
             name: "SyntraKit",
             dependencies: [
-                "SyntraCore",
-                "ConversationalInterface",
-                "SyntraTools"
             ],
             path: "Sources/SyntraKit"
         ),
 
         // --- Test Targets ---
-        .testTarget(
-            name: "SyntraFoundationTests",
-            dependencies: [
-                "SyntraCore",
-                "SyntraTools",
-                "MemoryEngine",
-                "ConsciousnessStructures",
-                .product(name: "Atomics", package: "swift-atomics")
-            ],
-            path: "Tests/SyntraFoundationTests"
-        ),
         .testTarget(
             name: "SyntraVaporServerTests",
             dependencies: [

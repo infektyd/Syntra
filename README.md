@@ -32,6 +32,55 @@ curl [http://127.0.0.1:8081/v1/chat/completions](http://127.0.0.1:8081/v1/chat/c
     "messages": [{"role": "user", "content": "Hello! Introduce yourself."}]
   }'
 
+Backend Selection (AFM ↔ Cloud)
+
+- Default: Apple Foundation Models (AFM) when available on macOS 26.
+- Cloud (OpenAI‑compatible) backend via env:
+
+  export SYNTRA_BACKEND=cloud
+  export LLM_BASE_URL=https://api.openai.com
+  export LLM_API_KEY=sk-...
+  export LLM_MODEL=gpt-4.1
+  # optional
+  export LLM_TIMEOUT_S=60
+  export LLM_MAX_RETRIES=5
+  export LLM_STREAM_IDLE_TIMEOUT_S=120
+  export LLM_BREAKER_MAX_FAILS=5
+  export LLM_BREAKER_OPEN_S=60
+  export SYNTRA_PRIVACY=on
+  export LLM_MAX_PROMPT_TOKENS=8192
+  export SYNTRA_DEBUG=true
+
+Health Check
+
+- Verify backend wiring without running a full chat:
+
+  curl http://127.0.0.1:8081/health/llm | jq .
+
+  {"status":"ok","backend":"cloud"}
+
+OpenAI‑Compatible Chat
+
+- Non‑stream:
+
+  curl -sS -X POST http://127.0.0.1:8081/v1/chat/completions \
+    -H 'Content-Type: application/json' \
+    -d '{"model":"gpt-4.1","messages":[{"role":"user","content":"Say hello from Syntra."}],"stream":false}' | jq .
+
+- Streaming (SSE): set "stream": true and use a client that prints SSE events.
+
+Parity Harness (AFM vs Cloud)
+
+- Build once and run prompts against both backends, saving JSONL transcripts:
+
+  tools/harness/run_parity.sh prompts.txt syntra_runs.jsonl
+
+- Or run directly:
+
+  swift build -c release --product SyntraHarness
+  .build/release/SyntraHarness --backend cloud --prompt "Hello from Syntra"
+  .build/release/SyntraHarness --backend afm   --prompt "Hello from Syntra"
+
 ## Next
 
 need to work on a better CLI for syntra, and increase its tooling
@@ -73,4 +122,3 @@ Shared/: Code that's shared between the different targets.
 📄 License
 
 This Project maintains the same license as the main SyntraFoundation project. See LICENSE file in the repository root.
-

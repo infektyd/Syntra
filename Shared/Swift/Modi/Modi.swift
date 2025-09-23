@@ -46,6 +46,22 @@ public struct ProbabilityDistribution: Sendable {
     }
 }
 
+public struct AlgorithmicPrinciple: Sendable {
+    let indicators: [String]
+    let validates: @Sendable (String) -> Bool
+    let importance: Double
+    let confidenceBoost: Double
+    let description: String
+
+    public init(indicators: [String], validates: @escaping @Sendable (String) -> Bool, importance: Double, confidenceBoost: Double, description: String) {
+        self.indicators = indicators
+        self.validates = validates
+        self.importance = importance
+        self.confidenceBoost = confidenceBoost
+        self.description = description
+    }
+}
+
 // MODI: The Logical/Rational/Analytical Brain
 // Processes input through systematic reasoning, logical frameworks, and analytical patterns
 // Represents the "mind" of consciousness - logic, analysis, systematic thinking
@@ -79,6 +95,88 @@ public struct Modi: Sendable {
         "xor": 0.6,      // Exclusive or - only one condition true
         "implies": 0.85, // Implication - if A then B
         "iff": 0.9       // If and only if - bidirectional implication
+    ]
+
+    // Core reasoning principles - consciousness-aligned verification patterns
+    private let algorithmicPrinciples: [String: AlgorithmicPrinciple] = [
+        "recursive_thinking": AlgorithmicPrinciple(
+            indicators: ["recursive", "recursion", "base case", "recursive call", "divide and conquer", "smaller subproblem"],
+            validates: { solution in
+                let lower = solution.lowercased()
+                return (lower.contains("recursive") || lower.contains("recursion")) &&
+                       (lower.contains("base") || lower.contains("stop") || lower.contains("terminal"))
+            },
+            importance: 0.9,
+            confidenceBoost: 0.3,
+            description: "Detects and validates recursive problem-solving approaches"
+        ),
+        "step_by_step_reasoning": AlgorithmicPrinciple(
+            indicators: ["step", "first", "then", "next", "sequence", "systematic", "methodical", "procedure"],
+            validates: { solution in
+                let lower = solution.lowercased()
+                let stepIndicators = ["step", "first", "then", "next", "procedure", "systematic"]
+                let matchCount = stepIndicators.filter { lower.contains($0) }.count
+                return matchCount >= 2
+            },
+            importance: 0.85,
+            confidenceBoost: 0.25,
+            description: "Validates systematic, sequential thinking and methodical approaches"
+        ),
+        "mathematical_precision": AlgorithmicPrinciple(
+            indicators: ["formula", "equation", "calculate", "result", "number", "precise", "exact", "mathematical"],
+            validates: { solution in
+                let lower = solution.lowercased()
+                let hasFormula = lower.contains("formula") || lower.contains("equation")
+                let hasCalculation = lower.contains("calculate") || lower.contains("result")
+                let hasNumbers = solution.range(of: #"\d+"#, options: .regularExpression) != nil
+                return hasNumbers && (hasFormula || hasCalculation)
+            },
+            importance: 0.9,
+            confidenceBoost: 0.35,
+            description: "Ensures numerical accuracy and proper formula usage in mathematical contexts"
+        ),
+        "logical_consistency": AlgorithmicPrinciple(
+            indicators: ["because", "therefore", "thus", "hence", "consequently", "reasoning", "logic", "conclusion"],
+            validates: { solution in
+                let lower = solution.lowercased()
+                let logicalConnectors = ["because", "therefore", "thus", "hence", "consequently"]
+                let reasoningWords = ["reasoning", "logic", "conclusion", "follows"]
+                let connectorCount = logicalConnectors.filter { lower.contains($0) }.count
+                let reasoningCount = reasoningWords.filter { lower.contains($0) }.count
+                return connectorCount >= 1 && reasoningCount >= 1
+            },
+            importance: 0.8,
+            confidenceBoost: 0.2,
+            description: "Checks for logical coherence, absence of contradictions, and sound reasoning chains"
+        ),
+        "constraint_satisfaction": AlgorithmicPrinciple(
+            indicators: ["constraint", "rule", "limitation", "condition", "requirement", "satisfy", "valid", "legal"],
+            validates: { solution in
+                let lower = solution.lowercased()
+                let constraintWords = ["constraint", "rule", "limitation", "condition", "requirement"]
+                let satisfactionWords = ["satisfy", "valid", "legal", "allowed", "permitted"]
+                let constraintCount = constraintWords.filter { lower.contains($0) }.count
+                let satisfactionCount = satisfactionWords.filter { lower.contains($0) }.count
+                return constraintCount >= 1 && satisfactionCount >= 1
+            },
+            importance: 0.85,
+            confidenceBoost: 0.3,
+            description: "Handles problems with explicit rules, constraints, and validation requirements"
+        ),
+        "algorithmic_search": AlgorithmicPrinciple(
+            indicators: ["search", "explore", "try", "attempt", "backtrack", "find", "discover", "solution space"],
+            validates: { solution in
+                let lower = solution.lowercased()
+                let searchWords = ["search", "explore", "try", "attempt", "backtrack"]
+                let discoveryWords = ["find", "discover", "solution", "answer"]
+                let searchCount = searchWords.filter { lower.contains($0) }.count
+                let discoveryCount = discoveryWords.filter { lower.contains($0) }.count
+                return searchCount >= 1 && discoveryCount >= 1
+            },
+            importance: 0.8,
+            confidenceBoost: 0.25,
+            description: "Validates search strategies, exploration methods, and solution discovery approaches"
+        )
     ]
     
     public init() {}
@@ -403,6 +501,204 @@ public struct Modi: Sendable {
         return Modi().reflect(content)
     }
 
+    // MARK: - Principle-Based Solution Verification Framework
+
+    /// Verify solutions using consciousness-aligned reasoning principles
+    public func verifySolution(_ problem: String, solution: String) -> [String: Any] {
+        // Apply principle-based verification using Modi's Bayesian patterns
+        let verificationResults = applyReasoningPrinciples(problem: problem, solution: solution)
+
+        // Calculate overall confidence using Modi's existing patterns
+        let overallConfidence = calculateVerificationConfidence(results: verificationResults)
+        let appliedPrinciples = extractAppliedPrinciples(results: verificationResults)
+        let verificationIssues = extractVerificationIssues(results: verificationResults)
+
+        // Determine verification success based on consciousness-aligned criteria
+        let verificationPassed = overallConfidence > 0.6 && !appliedPrinciples.isEmpty
+
+        // Create verification report using Modi's confidence assessment patterns
+        return [
+            "verification_passed": verificationPassed,
+            "overall_confidence": overallConfidence,
+            "applied_principles": appliedPrinciples,
+            "principle_scores": extractPrincipleScores(results: verificationResults),
+            "reasoning_depth": calculateReasoningDepth(results: verificationResults),
+            "verification_issues": verificationIssues,
+            "verification_type": "principle_based",
+            "consciousness_alignment": assessConsciousnessAlignment(results: verificationResults)
+        ]
+    }
+
+    /// Apply reasoning principles to evaluate solution quality
+    private func applyReasoningPrinciples(problem: String, solution: String) -> [String: [String: Any]] {
+        var results: [String: [String: Any]] = [:]
+        let combinedText = "\(problem) \(solution)".lowercased()
+
+        // Apply each principle and calculate its applicability and validation
+        for (principleName, principle) in algorithmicPrinciples {
+            let indicatorMatches = principle.indicators.filter { combinedText.contains($0) }.count
+            let indicatorStrength = Double(indicatorMatches) / Double(principle.indicators.count)
+
+            // Only apply principle if there's sufficient indicator presence
+            if indicatorStrength > 0.2 {
+                let validationPassed = principle.validates(solution)
+                let principleConfidence = calculatePrincipleConfidence(
+                    indicatorStrength: indicatorStrength,
+                    importance: principle.importance,
+                    validationPassed: validationPassed,
+                    confidenceBoost: principle.confidenceBoost
+                )
+
+                results[principleName] = [
+                    "indicator_strength": indicatorStrength,
+                    "validation_passed": validationPassed,
+                    "principle_confidence": principleConfidence,
+                    "importance": principle.importance,
+                    "matched_indicators": indicatorMatches,
+                    "description": principle.description
+                ]
+            }
+        }
+
+        return results
+    }
+
+    /// Calculate confidence for a specific principle using Bayesian-inspired approach
+    private func calculatePrincipleConfidence(indicatorStrength: Double, importance: Double, validationPassed: Bool, confidenceBoost: Double) -> Double {
+        // Base confidence from indicator presence (prior)
+        var confidence = indicatorStrength * importance
+
+        // Boost confidence if validation passed (likelihood)
+        if validationPassed {
+            confidence += confidenceBoost
+        } else {
+            confidence *= 0.5 // Penalty for failed validation
+        }
+
+        // Normalize to [0, 1] range
+        return min(confidence, 1.0)
+    }
+
+    /// Calculate overall verification confidence using Modi's entropy-based approach
+    private func calculateVerificationConfidence(results: [String: [String: Any]]) -> Double {
+        guard !results.isEmpty else { return 0.0 }
+
+        let confidenceValues = results.values.compactMap { $0["principle_confidence"] as? Double }
+        guard !confidenceValues.isEmpty else { return 0.0 }
+
+        // Weight by importance and calculate weighted average
+        var totalWeightedConfidence = 0.0
+        var totalWeight = 0.0
+
+        for (_, result) in results {
+            if let confidence = result["principle_confidence"] as? Double,
+               let importance = result["importance"] as? Double {
+                totalWeightedConfidence += confidence * importance
+                totalWeight += importance
+            }
+        }
+
+        let weightedAverage = totalWeight > 0 ? totalWeightedConfidence / totalWeight : 0.0
+
+        // Apply entropy correction - more diverse principle application increases confidence
+        let diversityBonus = calculateDiversityBonus(results: results)
+
+        return min(weightedAverage + diversityBonus, 1.0)
+    }
+
+    /// Calculate diversity bonus using entropy-based approach similar to Modi's existing methods
+    private func calculateDiversityBonus(results: [String: [String: Any]]) -> Double {
+        let principleCount = results.count
+        let maxPrinciples = algorithmicPrinciples.count
+
+        // Reward diverse principle application
+        let diversityRatio = Double(principleCount) / Double(maxPrinciples)
+        return diversityRatio * 0.1 // Small bonus for diversity
+    }
+
+    /// Extract successfully applied principles
+    private func extractAppliedPrinciples(results: [String: [String: Any]]) -> [String] {
+        return results.compactMap { (principleName, result) in
+            let validationPassed = result["validation_passed"] as? Bool ?? false
+            let confidence = result["principle_confidence"] as? Double ?? 0.0
+            return (validationPassed && confidence > 0.3) ? principleName : nil
+        }
+    }
+
+    /// Extract verification issues based on failed validations
+    private func extractVerificationIssues(results: [String: [String: Any]]) -> [String] {
+        var issues: [String] = []
+
+        for (principleName, result) in results {
+            let validationPassed = result["validation_passed"] as? Bool ?? false
+            let indicatorStrength = result["indicator_strength"] as? Double ?? 0.0
+
+            // Issue: High indicator presence but failed validation
+            if !validationPassed && indicatorStrength > 0.5 {
+                if let description = result["description"] as? String {
+                    issues.append("Failed \(principleName): \(description)")
+                } else {
+                    issues.append("Failed principle: \(principleName)")
+                }
+            }
+        }
+
+        // Issue: No applicable principles found
+        if results.isEmpty {
+            issues.append("No applicable reasoning principles detected - solution may lack structured approach")
+        }
+
+        return issues
+    }
+
+    /// Extract individual principle scores for detailed analysis
+    private func extractPrincipleScores(results: [String: [String: Any]]) -> [String: Double] {
+        var scores: [String: Double] = [:]
+        for (principleName, result) in results {
+            scores[principleName] = result["principle_confidence"] as? Double ?? 0.0
+        }
+        return scores
+    }
+
+    /// Calculate reasoning depth based on principle diversity and validation success
+    private func calculateReasoningDepth(results: [String: [String: Any]]) -> String {
+        let totalPrinciples = results.count
+        let passedValidations = results.values.filter { ($0["validation_passed"] as? Bool) == true }.count
+
+        if totalPrinciples >= 4 && passedValidations >= 3 {
+            return "comprehensive"
+        } else if totalPrinciples >= 2 && passedValidations >= 1 {
+            return "moderate"
+        } else if totalPrinciples >= 1 {
+            return "basic"
+        } else {
+            return "insufficient"
+        }
+    }
+
+    /// Assess consciousness alignment - how well does the solution embody conscious reasoning vs mechanical rules
+    private func assessConsciousnessAlignment(results: [String: [String: Any]]) -> String {
+        let principleTypes = results.keys
+
+        // Check for higher-order reasoning patterns
+        let hasRecursiveThinking = principleTypes.contains("recursive_thinking")
+        let hasLogicalConsistency = principleTypes.contains("logical_consistency")
+        let hasStepByStepReasoning = principleTypes.contains("step_by_step_reasoning")
+
+        let totalValidated = results.values.filter { ($0["validation_passed"] as? Bool) == true }.count
+
+        if totalValidated >= 3 && hasLogicalConsistency && (hasRecursiveThinking || hasStepByStepReasoning) {
+            return "high_consciousness"
+        } else if totalValidated >= 2 {
+            return "moderate_consciousness"
+        } else if totalValidated >= 1 {
+            return "basic_consciousness"
+        } else {
+            return "mechanical_response"
+        }
+    }
+
+
     // Extended interface for advanced Modi capabilities
     public static func modi_deep_analysis(_ content: String) -> [String: Any] {
         let modi = Modi()
@@ -413,6 +709,11 @@ public struct Modi: Sendable {
             "pattern_identification": modi.identifyReasoningPatterns(content)
         ]
     }
+    
+    /// Verify solutions using principle-based consciousness-aligned approach
+    public static func verifySolution(_ problem: String, solution: String) -> [String: Any] {
+        return Modi().verifySolution(problem, solution: solution)
+    }
 }
 
 // Global functions for backward compatibility
@@ -422,4 +723,72 @@ public func reflect_modi(_ content: String) -> [String] {
 
 public func modi_deep_analysis(_ content: String) -> [String: Any] {
     return Modi.modi_deep_analysis(content)
+}
+
+extension Modi {
+    /// Extract detailed analysis components from Modi response array for PromptArchitect
+    public func extractAnalysisDetails(_ modiResponse: [String]) -> [String: Any] {
+        var analysisDetails: [String: Any] = [:]
+
+        guard !modiResponse.isEmpty else {
+            return [
+                "primary_reasoning": "baseline_analysis",
+                "technical_domains": [],
+                "logical_frameworks": [],
+                "reasoning_strength": 0.0,
+                "analysis_completeness": "minimal"
+            ]
+        }
+
+        // Primary reasoning type (first element)
+        analysisDetails["primary_reasoning"] = modiResponse[0]
+
+        // Extract technical domains
+        var technicalDomains: [String] = []
+        var logicalFrameworks: [String] = []
+        var reasoningStrength = 0.5
+
+        for component in modiResponse {
+            // Look for technical domain indicators
+            if component.contains("computer_science") || component.contains("programming") {
+                technicalDomains.append("computational_analysis")
+            }
+            if component.contains("mathematics") || component.contains("algorithm") {
+                technicalDomains.append("mathematical_reasoning")
+            }
+            if component.contains("logical") || component.contains("deduction") {
+                logicalFrameworks.append("logical_deduction")
+            }
+            if component.contains("systematic") || component.contains("structural") {
+                logicalFrameworks.append("systematic_analysis")
+            }
+
+            // Assess reasoning strength indicators
+            if component.contains("high_confidence") || component.contains("precise") {
+                reasoningStrength = 0.9
+            } else if component.contains("technical") || component.contains("analytical") {
+                reasoningStrength = 0.7
+            }
+        }
+
+        // Determine analysis completeness
+        let completenessScore = modiResponse.count
+        var completenessLevel: String
+        if completenessScore >= 4 {
+            completenessLevel = "comprehensive"
+        } else if completenessScore >= 2 {
+            completenessLevel = "moderate"
+        } else {
+            completenessLevel = "minimal"
+        }
+
+        analysisDetails["technical_domains"] = technicalDomains
+        analysisDetails["logical_frameworks"] = logicalFrameworks
+        analysisDetails["reasoning_strength"] = reasoningStrength
+        analysisDetails["analysis_completeness"] = completenessLevel
+        analysisDetails["component_count"] = modiResponse.count
+        analysisDetails["raw_components"] = modiResponse
+
+        return analysisDetails
+    }
 }

@@ -2,40 +2,58 @@ import Foundation
 #if canImport(FoundationModels)
 import FoundationModels
 #endif
+import SyntraKit
+import SyntraTools
 
 // Valon engine - moral, creative, emotional reasoning
 @MainActor
 public final class ValonEngine {
     private let config: SyntraConfig
+    private let llm: LLMClient
     
-    public init(config: SyntraConfig) {
+    public init(config: SyntraConfig, llm: LLMClient = LLMClients.shared) {
         self.config = config
+        self.llm = llm
     }
     
     public func processInput(_ input: String, context: SyntraContext) async -> ValonResponse {
-        // Real moral and creative processing - no stubs
-        #if canImport(FoundationModels)
-        if #available(iOS 26.0, macOS 26.0, *) {
-            let model = SystemLanguageModel.default
-            if model.availability == .available {
-                do {
-                    let session = LanguageModelSession(model: model)
-                    let moralPrompt = buildValonPrompt(input, context: context)
-                    let response = try await session.respond(to: moralPrompt)
-                    return ValonResponse(
-                        content: response.content,
-                        moralAlignment: calculateMoralAlignment(response.content),
-                        creativity: calculateCreativity(response.content)
-                    )
-                } catch {
-                    // Fallback to rule-based processing
-                    return processValonFallback(input, context: context)
+        // Prefer pluggable backend via LLM facade
+        let moralPrompt = buildValonPrompt(input, context: context)
+        do {
+            let msgs: [ChatMessage] = [
+                .init(role: .system, content: "You are Syntra."),
+                .init(role: .user, content: moralPrompt)
+            ]
+            var text = ""
+            let stream = try await llm.complete(msgs, stream: false)
+            for try await chunk in stream { text += chunk }
+            return ValonResponse(
+                content: text,
+                moralAlignment: calculateMoralAlignment(text),
+                creativity: calculateCreativity(text)
+            )
+        } catch {
+            // Fallback to AFM if available, else rule-based
+            #if canImport(FoundationModels)
+            if #available(iOS 26.0, macOS 26.0, *) {
+                let model = SystemLanguageModel.default
+                if model.availability == .available {
+                    do {
+                        let session = LanguageModelSession(model: model)
+                        let response = try await session.respond(to: moralPrompt)
+                        return ValonResponse(
+                            content: response.content,
+                            moralAlignment: calculateMoralAlignment(response.content),
+                            creativity: calculateCreativity(response.content)
+                        )
+                    } catch {
+                        return processValonFallback(input, context: context)
+                    }
                 }
             }
+            #endif
+            return processValonFallback(input, context: context)
         }
-        #endif
-        
-        return processValonFallback(input, context: context)
     }
     
     private func buildValonPrompt(_ input: String, context: SyntraContext) -> String {
@@ -107,34 +125,51 @@ public final class ValonEngine {
 @MainActor
 public final class ModiEngine {
     private let config: SyntraConfig
+    private let llm: LLMClient
     
-    public init(config: SyntraConfig) {
+    public init(config: SyntraConfig, llm: LLMClient = LLMClients.shared) {
         self.config = config
+        self.llm = llm
     }
     
     public func processInput(_ input: String, context: SyntraContext) async -> ModiResponse {
-        // Real logical and analytical processing
-        #if canImport(FoundationModels)
-        if #available(iOS 26.0, macOS 26.0, *) {
-            let model = SystemLanguageModel.default
-            if model.availability == .available {
-                do {
-                    let session = LanguageModelSession(model: model)
-                    let logicalPrompt = buildModiPrompt(input, context: context)
-                    let response = try await session.respond(to: logicalPrompt)
-                    return ModiResponse(
-                        content: response.content,
-                        logicalCoherence: calculateLogicalCoherence(response.content),
-                        factualAccuracy: calculateFactualAccuracy(response.content)
-                    )
-                } catch {
-                    return processModiFallback(input, context: context)
+        // Prefer pluggable backend via LLM facade
+        let logicalPrompt = buildModiPrompt(input, context: context)
+        do {
+            let msgs: [ChatMessage] = [
+                .init(role: .system, content: "You are Syntra."),
+                .init(role: .user, content: logicalPrompt)
+            ]
+            var text = ""
+            let stream = try await llm.complete(msgs, stream: false)
+            for try await chunk in stream { text += chunk }
+            return ModiResponse(
+                content: text,
+                logicalCoherence: calculateLogicalCoherence(text),
+                factualAccuracy: calculateFactualAccuracy(text)
+            )
+        } catch {
+            // Fallback to AFM if available, else rule-based
+            #if canImport(FoundationModels)
+            if #available(iOS 26.0, macOS 26.0, *) {
+                let model = SystemLanguageModel.default
+                if model.availability == .available {
+                    do {
+                        let session = LanguageModelSession(model: model)
+                        let response = try await session.respond(to: logicalPrompt)
+                        return ModiResponse(
+                            content: response.content,
+                            logicalCoherence: calculateLogicalCoherence(response.content),
+                            factualAccuracy: calculateFactualAccuracy(response.content)
+                        )
+                    } catch {
+                        return processModiFallback(input, context: context)
+                    }
                 }
             }
+            #endif
+            return processModiFallback(input, context: context)
         }
-        #endif
-        
-        return processModiFallback(input, context: context)
     }
     
     private func buildModiPrompt(_ input: String, context: SyntraContext) -> String {
@@ -241,6 +276,19 @@ public final class DriftMonitor {
         let modiDrift = abs(actualModiRatio - expectedModiWeight)
         
         return (valonDrift + modiDrift) / 2.0
+    }
+}
+
+// Weighted content structure for synthesis
+public struct WeightedContent {
+    public let content: String
+    public let weight: Double
+    public let importance: Double
+
+    public init(content: String, weight: Double = 1.0, importance: Double = 1.0) {
+        self.content = content
+        self.weight = weight
+        self.importance = importance
     }
 }
 

@@ -44,27 +44,73 @@ public struct BrainEngine {
         }
     }
 
-    /// Inter-brain communication system
+    /// Enhanced inter-brain communication system with precision awareness
     public static func conductInternalDialogue(_ content: String) -> [String: Any] {
-        // First, get initial responses from both brains
+        // PHASE 1: Initial Assessment
         let valonInitial = Self.reflect_valon(content)
         let modiInitial = Self.reflect_modi(content)
         
-        // Allow Valon to respond to Modi's analysis
-        let valonContext = "Modi analyzed this as: \(modiInitial.joined(separator: ", ")). Content: \(content)"
+        // PHASE 2: Precision Assessment
+        let needsVerification = Valon.assessVerificationNeed(content)
+        var verificationResults: [String: Any] = [:]
+        
+        if needsVerification {
+            // TODO: Extract solution from content for verification
+            // For now, we'll simulate verification for demonstration
+            let mockSolution = extractPotentialSolution(from: content)
+            verificationResults = Modi.verifySolution(content, solution: mockSolution)
+        }
+        
+        // PHASE 3: Verification-Informed Responses
+        let valonContext = needsVerification ?
+            "Modi analyzed this as: \(modiInitial.joined(separator: ", ")). Verification needed: \(needsVerification). Content: \(content)" :
+            "Modi analyzed this as: \(modiInitial.joined(separator: ", ")). Content: \(content)"
+        
         let valonInformed = Self.reflect_valon(valonContext)
         
-        // Allow Modi to respond to Valon's perspective
         let modiContext = "Valon feels this is: \(valonInitial). Content: \(content)"
         let modiInformed = Self.reflect_modi(modiContext)
+        
+        // PHASE 4: Final Verification Adjustment (if verification occurred)
+        var finalValon = valonInformed
+        if needsVerification && !verificationResults.isEmpty {
+            let adjustedResponse = Valon.interpretVerificationResults(content, verificationResults: verificationResults)
+            finalValon = adjustedResponse["adjusted_response"] as? String ?? valonInformed
+        }
         
         return [
             "valon_initial": valonInitial,
             "modi_initial": modiInitial,
-            "valon_informed": valonInformed,
+            "valon_informed": finalValon,
             "modi_informed": modiInformed,
+            "verification_needed": needsVerification,
+            "verification_results": verificationResults,
             "dialogue_occurred": true
         ]
+    }
+    
+    /// Extract potential solution from content for verification
+    private static func extractPotentialSolution(from content: String) -> String {
+        // Simple heuristic: look for patterns that might be solutions
+        let lines = content.components(separatedBy: .newlines)
+        
+        // Look for lines with numbers (potential algorithmic answers)
+        for line in lines {
+            if line.range(of: #"\d+"#, options: .regularExpression) != nil {
+                return line
+            }
+        }
+        
+        // Look for structured solution patterns
+        for line in lines {
+            let lower = line.lowercased()
+            if lower.contains("step") || lower.contains("move") || lower.contains("solution") {
+                return line
+            }
+        }
+        
+        // Fallback: return the content itself
+        return content
     }
 
     public static func processThroughBrains(_ input: String) async -> [String: Any] {
@@ -76,12 +122,22 @@ public struct BrainEngine {
         let dialogue = Self.conductInternalDialogue(input)
         SyntraPerformanceLogger.logStage("internal_dialogue_complete", message: "Internal dialogue completed", data: dialogue.keys)
         SyntraPerformanceLogger.endTiming("internal_dialogue", details: "Valon-Modi communication")
-        
-        // Use the informed responses for final synthesis
-        SyntraPerformanceLogger.startTiming("response_extraction")
+
+        // Extract complete consciousness data including rich symbolic structures
+        SyntraPerformanceLogger.startTiming("consciousness_data_extraction")
         let finalValon = dialogue["valon_informed"] as? String ?? dialogue["valon_initial"] as? String ?? "neutral"
         let finalModi = dialogue["modi_informed"] as? [String] ?? dialogue["modi_initial"] as? [String] ?? ["baseline_analysis"]
-        SyntraPerformanceLogger.endTiming("response_extraction", details: "Extracted final responses")
+
+        // Get full symbolic data from Valon for PromptArchitect
+        let valon = Valon()
+        let valonSymbolicData = valon.extractSymbolicData(finalValon)
+        let precisionRequirements = dialogue["precision_context"] as? [String: Any] ?? [:]
+
+        // Get detailed Modi analysis
+        let modi = Modi()
+        let modiAnalysisDetails = modi.extractAnalysisDetails(finalModi)
+
+        SyntraPerformanceLogger.endTiming("consciousness_data_extraction", details: "Extracted complete consciousness data")
         
         SyntraPerformanceLogger.startTiming("logging_stages")
         Self.logStage(stage: "valon_stage", output: dialogue["valon_initial"] ?? "unknown", directory: "entropy_logs")
@@ -131,9 +187,22 @@ public struct BrainEngine {
             "consciousness": consciousness,
             "internal_dialogue": dialogue,
             "consciousness_state": consciousness["consciousness_state"] ?? "unknown",
-            "decision_confidence": consciousness["decision_confidence"] ?? 0.0
+            "decision_confidence": consciousness["decision_confidence"] ?? 0.0,
+
+            // Enhanced consciousness data for PromptArchitect
+            "valon_symbolic_data": valonSymbolicData,
+            "modi_analysis_details": modiAnalysisDetails,
+            "precision_requirements": precisionRequirements,
+
+            // Verification indicators
+            "precision_needed": precisionRequirements["needs_verification"] as? Bool ?? false,
+            "verification_context": [
+                "type": precisionRequirements["type"] ?? "creative_approximation_acceptable",
+                "intensity": precisionRequirements["intensity"] ?? "moderate_stakes",
+                "reasoning": precisionRequirements["reasoning"] ?? ""
+            ]
         ]
-        
+
         // Legacy compatibility
         result["drift"] = consciousness
         SyntraPerformanceLogger.endTiming("result_assembly", details: "Assembled final result")
@@ -445,7 +514,7 @@ public struct BrainEngine {
         """
         
         let optimizedPrompt = optimizePromptForAppleLLM(prompt)
-        return await queryAppleLLM(optimizedPrompt)
+        return await queryLLM(optimizedPrompt)
     }
     
     @available(macOS 26.0, *)
@@ -464,7 +533,7 @@ public struct BrainEngine {
         """
         
         let optimizedPrompt = optimizePromptForAppleLLM(prompt)
-        return await queryAppleLLM(optimizedPrompt)
+        return await queryLLM(optimizedPrompt)
     }
     
     @available(macOS 26.0, *)
@@ -493,7 +562,7 @@ public struct BrainEngine {
         }
         
         let optimizedPrompt = optimizePromptForAppleLLM(prompt)
-        return await queryAppleLLM(optimizedPrompt)
+        return await queryLLM(optimizedPrompt)
     }
     
     @available(macOS 26.0, *)
@@ -535,6 +604,56 @@ public struct BrainEngine {
             }
             Self.logStage(stage: "apple_llm", output: ["prompt": prompt, "response": msg], directory: "entropy_logs")
             return msg
+        }
+    }
+
+    // MARK: - Backend-agnostic query (Cloud or AFM)
+    @available(macOS 26.0, *)
+    public static func queryLLM(_ prompt: String) async -> String {
+        let mode = (ProcessInfo.processInfo.environment["SYNTRA_BACKEND"] ?? "").lowercased()
+        if mode == "cloud" {
+            // Minimal OpenAI-compatible non-stream call
+            let base = ProcessInfo.processInfo.environment["LLM_BASE_URL"] ?? "https://api.openai.com"
+            let model = ProcessInfo.processInfo.environment["LLM_MODEL"] ?? "gpt-4.1"
+            guard let apiKey = ProcessInfo.processInfo.environment["LLM_API_KEY"], !apiKey.isEmpty else {
+                return "[Cloud backend missing LLM_API_KEY]"
+            }
+            guard let url = URL(string: base + "/v1/chat/completions") else {
+                return "[Invalid LLM_BASE_URL]"
+            }
+            var req = URLRequest(url: url)
+            req.httpMethod = "POST"
+            req.setValue("application/json", forHTTPHeaderField: "Content-Type")
+            req.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
+            let body: [String: Any] = [
+                "model": model,
+                "messages": [["role": "user", "content": prompt]],
+                "stream": false,
+                "temperature": 0.3
+            ]
+            req.httpBody = try? JSONSerialization.data(withJSONObject: body)
+            let config = URLSessionConfiguration.ephemeral
+            config.timeoutIntervalForRequest = 60
+            let session = URLSession(configuration: config)
+            do {
+                let (data, response) = try await session.data(for: req)
+                guard let http = response as? HTTPURLResponse, (200..<300).contains(http.statusCode) else {
+                    let text = String(data: data, encoding: .utf8) ?? ""
+                    return "[Cloud LLM HTTP error] \(text)"
+                }
+                struct Choice: Decodable { let message: Msg }
+                struct Msg: Decodable { let content: String }
+                struct Resp: Decodable { let choices: [Choice] }
+                if let decoded = try? JSONDecoder().decode(Resp.self, from: data) {
+                    return decoded.choices.first?.message.content ?? ""
+                }
+                return String(data: data, encoding: .utf8) ?? ""
+            } catch {
+                return "[Cloud LLM error: \(error.localizedDescription)]"
+            }
+        } else {
+            // Default to Apple FM path
+            return await queryAppleLLM(prompt)
         }
     }
     

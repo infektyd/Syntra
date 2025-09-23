@@ -17,7 +17,11 @@ public func configure(_ app: Application) async throws {
     app.middleware.use(LoggingMiddleware())
 
     // Configure server port and body size limit
-    app.http.server.configuration.port = 8081
+    if let portStr = Environment.get("PORT"), let p = Int(portStr) {
+        app.http.server.configuration.port = p
+    } else {
+        app.http.server.configuration.port = 8081
+    }
     app.routes.defaultMaxBodySize = "5mb"
 
     // Register routes

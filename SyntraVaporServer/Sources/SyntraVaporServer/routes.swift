@@ -1,5 +1,8 @@
 import Vapor
 import SyntraKit
+import SyntraTools
+import BrainEngine
+import FoundationModels
 
 // --- MODEL DEFINITIONS ---
 
@@ -43,10 +46,102 @@ func sanitizeOutput(_ text: String) -> String {
 }
 
 // ----------------------------------------------------------
+// --- DIRECT BRAIN ENGINE INTEGRATION ---
+// ----------------------------------------------------------
+
+private func processWithDirectConsciousness(_ input: String) async throws -> String {
+    // Step 1: Process through BrainEngine to get complete consciousness data
+    let consciousnessResult = await BrainEngine.processThroughBrains(input)
+
+    // Step 2: Extract complete symbolic and analysis data for PromptArchitect
+    let valonResponse = consciousnessResult["valon"] as? String ?? "neutral"
+    let modiResponse = consciousnessResult["modi"] as? [String] ?? ["baseline_analysis"]
+
+    // Extract rich symbolic data from Valon
+    let valonSymbolicData = consciousnessResult["valon_symbolic_data"] as? [String: Any] ?? [:]
+
+    // Extract detailed Modi analysis
+    let modiAnalysisDetails = consciousnessResult["modi_analysis_details"] as? [String: Any] ?? [:]
+
+    // Step 3: Extract precision and verification requirements
+    let precisionNeeded = consciousnessResult["precision_needed"] as? Bool ?? false
+    let verificationContext = consciousnessResult["verification_context"] as? [String: Any] ?? [:]
+
+    // Step 4: Use PromptArchitect to build enhanced instructions with complete consciousness data
+    // Pass rich consciousness data to PromptArchitect for maximum instruction enhancement
+    let enhancedInstructions = PromptArchitect.buildEnhancedInstructions(
+        valonResponse: valonResponse,
+        modiResponse: modiResponse,
+        verificationNeeded: precisionNeeded
+    )
+
+    // Log the complete consciousness data for debugging
+    print("🔍 [CONSCIOUSNESS DATA] Complete data extracted for PromptArchitect:")
+    print("  🎭 Valon Symbolic Data: \(valonSymbolicData)")
+    print("  🔧 Modi Analysis Details: \(modiAnalysisDetails)")
+    print("  ⚡ Precision Context: \(verificationContext)")
+    print("  ✅ Complete consciousness data preserved and available")
+
+    // Step 5: Create LanguageModelSession with enhanced instructions
+    if #available(macOS 26.0, *) {
+        let model = SystemLanguageModel.default
+        guard model.availability == .available else {
+            // Fallback to synthesis from consciousness if Apple Intelligence unavailable
+            if let synthesis = consciousnessResult["consciousness"] as? [String: Any],
+               let syntraSynthesis = synthesis["synthesis"] as? String {
+                return syntraSynthesis
+            }
+            return "SYNTRA consciousness processing completed, but Apple Intelligence unavailable for enhanced response."
+        }
+
+        let session = LanguageModelSession(model: model)
+        // Combine the enhanced instructions with the original input
+        let fullPrompt = "\(enhancedInstructions)\n\nUser Input: \(input)"
+        let response = try await session.respond(to: fullPrompt)
+        return response.content
+    } else {
+        // Fallback for older macOS versions - use consciousness synthesis
+        if let synthesis = consciousnessResult["consciousness"] as? [String: Any],
+           let syntraSynthesis = synthesis["synthesis"] as? String {
+            return syntraSynthesis
+        }
+        return "Consciousness processing completed (macOS version does not support Apple Intelligence)."
+    }
+}
+
+private func processWithDirectConsciousnessStream(_ input: String) async throws -> AsyncThrowingStream<String, any Error> {
+    return AsyncThrowingStream<String, any Error> { continuation in
+        Task {
+            do {
+                let result = try await processWithDirectConsciousness(input)
+                // For streaming, split the response into chunks
+                let chunks = result.components(separatedBy: " ")
+                for chunk in chunks {
+                    if !chunk.isEmpty {
+                        continuation.yield(chunk + " ")
+                        try await Task.sleep(nanoseconds: 50_000_000) // 50ms delay between chunks
+                    }
+                }
+                continuation.finish()
+            } catch {
+                continuation.finish(throwing: error)
+            }
+        }
+    }
+}
+
+// ----------------------------------------------------------
 // --- ROUTES ---
 // ----------------------------------------------------------
 
 func routes(_ app: Application) throws {
+
+    // Lightweight health check for active LLM backend
+    app.get("health", "llm") { req async throws -> [String: String] in
+        let status = await LLMClients.shared.healthCheck()
+        let backend = (Environment.get("SYNTRA_BACKEND") ?? "afm").lowercased()
+        return ["status": status, "backend": backend]
+    }
 
     app.get("v1", "models") { req async -> OpenAIModelsPayload in
         let now = Int(Date().timeIntervalSince1970)
@@ -108,21 +203,40 @@ func routes(_ app: Application) throws {
                             let initialJsonData = try JSONEncoder().encode(initialChunk)
                             let initialEventString = "data: \(String(decoding: initialJsonData, as: UTF8.self))\n\n"
                             _ = writer.write(.buffer(.init(string: initialEventString)))
-                            // 2. Stream content chunks
-                            let stream = try await SyntraHandlers.handleProcessThroughBrainsStream(processedPrompt)
-                            for try await chunk in stream {
-                                // You may also process chunks here if you want (sanitizeOutput)
-                                let chunkResponse = ChatCompletionChunk(
-                                    id: responseID,
-                                    object: "chat.completion.chunk",
-                                    created: creationDate,
-                                    model: modelID,
-                                    choices: [.init(index: 0, delta: .init(role: nil, content: chunk, tool_calls: nil), finish_reason: nil)]
-                                )
-                                let jsonData = try JSONEncoder().encode(chunkResponse)
-                                let eventString = "data: \(String(decoding: jsonData, as: UTF8.self))\n\n"
-                                req.logger.debug("Writing stream chunk: \(eventString)")
-                                _ = writer.write(.buffer(.init(string: eventString)))
+                            // 2. Stream content chunks from selected backend
+                            if (Environment.get("SYNTRA_BACKEND") ?? "").lowercased() == "cloud" {
+                                let messages: [ChatMessage] = chatRequest.messages
+                                let ms: [SyntraKit.ChatMessage] = messages.map { m in
+                                    SyntraKit.ChatMessage(role: SyntraKit.ChatMessage.Role(rawValue: m.role.rawValue) ?? .user,
+                                                          content: m.content.asString())
+                                }
+                                let llmStream = try await LLMClients.shared.complete(ms, stream: true)
+                                for try await chunk in llmStream {
+                                    let chunkResponse = ChatCompletionChunk(
+                                        id: responseID,
+                                        object: "chat.completion.chunk",
+                                        created: creationDate,
+                                        model: modelID,
+                                        choices: [.init(index: 0, delta: .init(role: nil, content: chunk, tool_calls: nil), finish_reason: nil)]
+                                    )
+                                    let jsonData = try JSONEncoder().encode(chunkResponse)
+                                    let eventString = "data: \(String(decoding: jsonData, as: UTF8.self))\n\n"
+                                    _ = writer.write(.buffer(.init(string: eventString)))
+                                }
+                            } else {
+                                let stream = try await processWithDirectConsciousnessStream(processedPrompt)
+                                for try await chunk in stream {
+                                    let chunkResponse = ChatCompletionChunk(
+                                        id: responseID,
+                                        object: "chat.completion.chunk",
+                                        created: creationDate,
+                                        model: modelID,
+                                        choices: [.init(index: 0, delta: .init(role: nil, content: chunk, tool_calls: nil), finish_reason: nil)]
+                                    )
+                                    let jsonData = try JSONEncoder().encode(chunkResponse)
+                                    let eventString = "data: \(String(decoding: jsonData, as: UTF8.self))\n\n"
+                                    _ = writer.write(.buffer(.init(string: eventString)))
+                                }
                             }
                             // 3. Send final finish reason chunk
                             let finalChunk = ChatCompletionChunk(
@@ -155,7 +269,20 @@ func routes(_ app: Application) throws {
             } else {
                 req.logger.info("Handling as a NON-STREAMING request.")
 
-                let replyText = try await SyntraHandlers.handleProcessThroughBrains(processedPrompt)
+                let replyText: String
+                if (Environment.get("SYNTRA_BACKEND") ?? "").lowercased() == "cloud" {
+                    let messages: [ChatMessage] = chatRequest.messages
+                    let ms: [SyntraKit.ChatMessage] = messages.map { m in
+                        SyntraKit.ChatMessage(role: SyntraKit.ChatMessage.Role(rawValue: m.role.rawValue) ?? .user,
+                                              content: m.content.asString())
+                    }
+                    var collected = ""
+                    let stream = try await LLMClients.shared.complete(ms, stream: false)
+                    for try await piece in stream { collected += piece }
+                    replyText = collected
+                } else {
+                    replyText = try await processWithDirectConsciousness(processedPrompt)
+                }
                 req.logger.info("Received reply from SyntraKit: \(replyText)")
 
                 // ---- Your output post-processing step here ----

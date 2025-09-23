@@ -71,6 +71,12 @@ config/private/
 config/production/
 
 ######################################
+# Archived/Legacy workspace
+######################################
+legacy/
+**/Package.swift.legacy
+
+######################################
 # Memory, Logs, Analytics (MANDATORY)
 ######################################
 memory_vault/temp/
@@ -81,6 +87,13 @@ drift_logs/
 entropy_logs/
 entropy_logs/*.json
 telemetry/
+runs/
+build_artifacts/
+test_results/
+smoke.jsonl
+baseline
+baseline.json
+syntraResponses.json
 
 ######################################
 # Test/Coverage artifacts

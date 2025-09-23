@@ -58,4 +58,10 @@ public final class SyntraEngine: SyntraChatRuntime, @unchecked Sendable {
             }
         }
     }
+
+    public func healthCheck() async throws -> String {
+        // Since SyntraEngine may wrap different backends, this is a placeholder.
+        // A more robust implementation would query the active backend.
+        return "ok"
+    }
 }
