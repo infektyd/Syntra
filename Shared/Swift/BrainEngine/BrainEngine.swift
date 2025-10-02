@@ -211,25 +211,22 @@ public struct BrainEngine {
         SyntraPerformanceLogger.startTiming("brain_routing")
         if #available(macOS 26.0, *) {
             let selectedBrain = Self.selectAppropriateResponder(input: input, consciousness: consciousness)
-            let finalResponse: String
-            
-            switch selectedBrain {
-            case .valon:
-                finalResponse = await Self.enhancedValonResponse(consciousness, originalInput: input)
-                result["responding_brain"] = "valon_dominant"
-            case .modi:
-                finalResponse = await Self.enhancedModiResponse(consciousness, originalInput: input)
-                result["responding_brain"] = "modi_dominant"
-            case .integrated:
-                finalResponse = await Self.integratedConsciousnessResponse(consciousness, originalInput: input)
-                result["responding_brain"] = "integrated_consciousness"
-            }
-            
-            result["syntra_decision"] = finalResponse
-            result["consciousness_state"] = "brain_specific_response"
+
+            // Generate trace-enabled response
+            let traceResponse = await Self.generateTraceEnabledResponse(
+                brain: selectedBrain,
+                consciousness: consciousness,
+                originalInput: input
+            )
+
+            result["responding_brain"] = selectedBrain.rawValue
+            result["syntra_decision"] = traceResponse.answer
+            result["trace_validation"] = traceResponse.validationResult
+            result["trace_data"] = traceResponse.validatedTrace
+            result["consciousness_state"] = "trace_enabled_response"
         } else {
             // FIXED: Extract the actual synthesized decision from consciousness
-            result["syntra_decision"] = consciousness["syntra_decision"] as? String ?? 
+            result["syntra_decision"] = consciousness["syntra_decision"] as? String ??
                                       consciousness["converged_state"] as? String ??
                                       "consciousness_synthesis_unavailable"
             result["consciousness_state"] = "consciousness_only"
@@ -336,10 +333,16 @@ public struct BrainEngine {
         return min(confidence, 1.0)
     }
 
-    enum ResponderBrain {
+    enum ResponderBrain: String {
         case valon // Emotional/Creative/Moral responses
         case modi // Technical/Logical/Analytical responses
         case integrated // Balanced responses
+    }
+
+    struct TraceResponse {
+        let answer: String
+        let validationResult: TraceValidationSchema.ValidationResult
+        let validatedTrace: [String: Any]?
     }
     
     private static func selectAppropriateResponder(input: String, consciousness: [String: Any]) -> ResponderBrain {
@@ -564,7 +567,139 @@ public struct BrainEngine {
         let optimizedPrompt = optimizePromptForAppleLLM(prompt)
         return await queryLLM(optimizedPrompt)
     }
-    
+
+    @available(macOS 26.0, *)
+    private static func generateTraceEnabledResponse(
+        brain: ResponderBrain,
+        consciousness: [String: Any],
+        originalInput: String
+    ) async -> TraceResponse {
+        // Validate user prompt
+        guard WrappedPromptTemplate.validateUserPrompt(originalInput) else {
+            return TraceResponse(
+                answer: "I'm sorry, but I need a more detailed question to provide a meaningful response.",
+                validationResult: TraceValidationSchema.ValidationResult(
+                    isValid: false,
+                    errors: ["Invalid or empty user prompt"],
+                    validatedData: nil
+                ),
+                validatedTrace: nil
+            )
+        }
+
+        // Construct wrapped prompt using template
+        let wrappedPrompt = WrappedPromptTemplate.constructWrappedPrompt(userPrompt: originalInput)
+
+        // Try OpenRouter first, fallback to Apple FM
+        var rawResponse: String?
+        var usedOpenRouter = false
+
+        if let openRouterClient = OpenRouterClient.fromEnvironment() {
+            do {
+                // Use a good model for structured output (GPT-4 or similar)
+                let model = ProcessInfo.processInfo.environment["OPENROUTER_MODEL"] ?? "openai/gpt-4o-mini"
+                let response = try await openRouterClient.sendChatCompletion(
+                    model: model,
+                    prompt: wrappedPrompt,
+                    temperature: 0.3,
+                    maxTokens: 2000
+                )
+
+                if let content = openRouterClient.extractContent(from: response) {
+                    rawResponse = content
+                    usedOpenRouter = true
+
+                    // Log OpenRouter usage
+                    Self.logStage(stage: "openrouter_request", output: [
+                        "model": model,
+                        "success": true,
+                        "usage": response.usage.map { [
+                            "prompt_tokens": $0.prompt_tokens,
+                            "completion_tokens": $0.completion_tokens,
+                            "total_tokens": $0.total_tokens
+                        ] } as Any
+                    ], directory: "entropy_logs")
+                }
+            } catch {
+                // Log OpenRouter failure and fallback
+                Self.logStage(stage: "openrouter_request", output: [
+                    "error": error.localizedDescription,
+                    "fallback_to_apple_fm": true
+                ], directory: "entropy_logs")
+            }
+        }
+
+        // Fallback to Apple FM if OpenRouter failed or unavailable
+        if rawResponse == nil {
+            let optimizedPrompt = optimizePromptForAppleLLM(wrappedPrompt)
+            rawResponse = await queryLLM(optimizedPrompt)
+            usedOpenRouter = false
+        }
+
+        guard let response = rawResponse else {
+            return TraceResponse(
+                answer: "I apologize, but I'm unable to generate a response at this time.",
+                validationResult: TraceValidationSchema.ValidationResult(
+                    isValid: false,
+                    errors: ["No response generated from any LLM"],
+                    validatedData: nil
+                ),
+                validatedTrace: nil
+            )
+        }
+
+        // Attempt to parse and validate JSON response
+        if let jsonData = response.data(using: .utf8),
+           let json = try? JSONSerialization.jsonObject(with: jsonData) as? [String: Any] {
+
+            let validationResult = TraceValidationSchema.validate(json: json)
+
+            if validationResult.isValid, let answer = json["answer"] as? String {
+                // Log successful validation
+                Self.logStage(stage: "trace_validation", output: [
+                    "validation_success": true,
+                    "used_openrouter": usedOpenRouter,
+                    "trace": json["trace"] as Any
+                ], directory: "entropy_logs")
+
+                return TraceResponse(
+                    answer: answer,
+                    validationResult: validationResult,
+                    validatedTrace: json["trace"] as? [String: Any]
+                )
+            } else {
+                // Validation failed - log errors
+                Self.logStage(stage: "trace_validation", output: [
+                    "validation_success": false,
+                    "used_openrouter": usedOpenRouter,
+                    "errors": validationResult.errors,
+                    "raw_response_preview": String(response.prefix(500))
+                ], directory: "entropy_logs")
+            }
+        } else {
+            // JSON parsing failed
+            Self.logStage(stage: "trace_validation", output: [
+                "validation_success": false,
+                "json_parsing_failed": true,
+                "used_openrouter": usedOpenRouter,
+                "raw_response_preview": String(response.prefix(500))
+            ], directory: "entropy_logs")
+        }
+
+        // Fallback: return raw response as answer
+        return TraceResponse(
+            answer: response,
+            validationResult: TraceValidationSchema.ValidationResult(
+                isValid: false,
+                errors: ["Failed to parse JSON response"],
+                validatedData: nil
+            ),
+            validatedTrace: nil
+        )
+    }
+
+
+
     @available(macOS 26.0, *)
     public static func queryAppleLLM(_ prompt: String) async -> String {
         // MARK: - Verbose LLM Logging: Log prompt before sending

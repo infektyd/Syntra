@@ -154,6 +154,7 @@ archived_tests/*.rtf
 ######################################
 # User-specified ignores
 ######################################
+AGENTS.md
 backend.json
 backend.md
 method.md

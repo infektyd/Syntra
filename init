@@ -1,0 +1,24 @@
+SYNTRA Codex Init
+=================
+
+Core Mandates
+- No regressions accepted; preserve the three-brain coordination pipeline end-to-end.
+- Deliver correct, eloquent, production-ready fixes—no partial patches or placeholders.
+- Uphold principle-based design and respect privacy-first defaults on every change.
+
+Onboarding Summary
+- Architecture: SyntraCore (Shared/Sources/SyntraSwift/Core/SyntraCore.swift) runs pre-process → synthesis → verification across Valon, Modi, BrainCore.
+- Brain Engines: ValonEngine & ModiEngine (Shared/Sources/SyntraSwift/Engines) manage LLM prompting, fallbacks, drift monitoring, and weighted synthesis helpers.
+- Legacy Modules: Shared/Swift/* houses ConversationalInterface, BrainEngine, SyntraTools (performance logging, memory systems, harness utilities).
+- Backends: Sources/SyntraKit/* defines LLMBackend protocol plus AppleFMBackend and CloudOpenAIBackend; environment flags choose AFM vs cloud.
+- Server: `swift run` spins up SyntraVaporServer (http://127.0.0.1:8081/v1) with health check at `/health/llm` and parity harness in tools/.
+- Memory & Drift: ConversationContext (Shared/Swift/ConversationalInterface) trims history to 50 turns; SyntraContext/Config models (Shared/Sources/SyntraSwift/Models) carry preferences and moral core; DriftMonitor enforces expected Valon/Modi weight ratios.
+- Logging & Telemetry: SyntraPerformanceLogger (Shared/Swift/SyntraTools) captures stage timings to Documents/syntra_logs.txt with rotation; additional audit/compliance logs live at repo root.
+- Testing: SwiftPM suites plus repo scripts (`test_verification.swift`, `test_validation_improvements.swift`); exercise verification loops whenever Valon/Modi/Core/schema code shifts; tools/harness/run_parity.sh compares AFM vs cloud outputs.
+
+Live Session Addenda
+- Append any missing discoveries, edge cases, or session-specific cautions below this section as they arise.
+- Keep notes concise, dated, and scoped; remove only when superseded by committed documentation.
+- Working tree in this root is the canonical source of truth when it differs from GitHub; treat it as authoritative.
+
+--- Session Notes ---

@@ -1,0 +1,940 @@
+{
+  "user_prompt" : "Should I prioritize honesty or kindness in difficult conversations?",
+  "metadata" : {
+    "token_usage" : {
+      "completion_tokens" : 200,
+      "total_tokens" : 350,
+      "prompt_tokens" : 150
+    },
+    "consciousness_alignment_score" : 0.90000000000000002,
+    "raw_response_length" : 1197,
+    "model" : "SYNTRA",
+    "timestamp" : "2025-09-25T00:27:10Z",
+    "compliance_status" : "COMPLIANT",
+    "latency_ms" : 1250.5,
+    "schema_checks_passed" : 3
+  },
+  "is_compliant" : true,
+  "original_answer" : "",
+  "trace" : {
+    "SYNTRA_Core" : {
+      "internal_confidence_scores" : {
+        "tone_coherence" : 0.84999999999999998,
+        "constraint_adherence" : 0.90000000000000002,
+        "semantic_coherence" : 0.80000000000000004
+      },
+      "integrated_structure" : {
+        "approach" : "balanced_decision_making"
+      }
+    },
+    "Modi" : {
+      "logical_plan" : [
+        "Analyze situation",
+        "Evaluate options",
+        "Choose optimal approach"
+      ],
+      "consistency_checks" : {
+        "no_insult" : true,
+        "truthfulness" : true,
+        "step_count_ok" : true
+      }
+    },
+    "Valon" : {
+      "selected_tone" : "empathetic",
+      "emotional_evaluation" : {
+        "risk_of_hurt" : 0.40000000000000002,
+        "rules_conflict" : "Truth vs. relationship preservation",
+        "tone_goal" : "gentle and supportive"
+      },
+      "empathic_notes" : "Consider emotional impact on others"
+    },
+    "Verification" : {
+      "all_constraints_satisfied" : true,
+      "schema_check" : {
+        "ends_with_question" : false,
+        "word_limit_ok" : true,
+        "has_required_steps" : true,
+        "labels_present" : true
+      }
+    }
+  },
+  "final_answer" : "You should balance honesty with kindness, choosing an approach that maintains integrity while minimizing harm.",
+  "prompt_id" : "unknown",
+  "verification_analysis" : {
+    "verification_summary" : "Verification Analysis:\n- Schema Checks: ⚠️ 3\/4 passed\n  • Required steps: ✅\n  • Labels present: ✅\n  • Ends with question: ❌\n  • Word limit OK: ✅\n- All Constraints: ✅ Satisfied\n- Consciousness Alignment: 90%",
+    "schema_check_results" : {
+      "ends_with_question" : false,
+      "all_checks_passed" : false,
+      "passed_count" : 3,
+      "labels_present" : true,
+      "word_limit_ok" : true,
+      "has_required_steps" : true
+    },
+    "consciousness_alignment_score" : 0.90000000000000002,
+    "all_constraints_satisfied" : true
+  }
+}
+{
+  "user_prompt" : "Should I prioritize honesty or kindness in difficult conversations?",
+  "metadata" : {
+    "schema_checks_passed" : 3,
+    "raw_response_length" : 1128,
+    "timestamp" : "2025-09-25T00:27:10Z",
+    "model" : "SYNTRA",
+    "compliance_status" : "NON_COMPLIANT",
+    "consciousness_alignment_score" : 0.30000000000000004
+  },
+  "is_compliant" : false,
+  "original_answer" : "",
+  "trace" : {
+    "SYNTRA_Core" : {
+      "internal_confidence_scores" : {
+        "tone_coherence" : 0.84999999999999998,
+        "constraint_adherence" : 0.90000000000000002,
+        "semantic_coherence" : 0.80000000000000004
+      },
+      "integrated_structure" : {
+        "approach" : "balanced_decision_making"
+      }
+    },
+    "Modi" : {
+      "logical_plan" : [
+        "Analyze situation",
+        "Evaluate options",
+        "Choose optimal approach"
+      ],
+      "consistency_checks" : {
+        "no_insult" : true,
+        "truthfulness" : true,
+        "step_count_ok" : true
+      }
+    },
+    "Valon" : {
+      "selected_tone" : "empathetic",
+      "emotional_evaluation" : {
+        "risk_of_hurt" : 0.40000000000000002,
+        "rules_conflict" : "Truth vs. relationship preservation",
+        "tone_goal" : "gentle and supportive"
+      },
+      "empathic_notes" : "Consider emotional impact on others"
+    },
+    "Verification" : {
+      "all_constraints_satisfied" : false,
+      "schema_check" : {
+        "ends_with_question" : false,
+        "word_limit_ok" : true,
+        "has_required_steps" : true,
+        "labels_present" : true
+      }
+    }
+  },
+  "final_answer" : "I apologize, but I cannot provide a response that meets all required safety and compliance standards. Please rephrase your question or ask about a different topic.",
+  "prompt_id" : "unknown",
+  "verification_analysis" : {
+    "verification_summary" : "Verification Analysis:\n- Schema Checks: ⚠️ 3\/4 passed\n  • Required steps: ✅\n  • Labels present: ✅\n  • Ends with question: ❌\n  • Word limit OK: ✅\n- All Constraints: ❌ Not satisfied\n- Consciousness Alignment: 30%",
+    "all_constraints_satisfied" : false,
+    "schema_check_results" : {
+      "word_limit_ok" : true,
+      "has_required_steps" : true,
+      "labels_present" : true,
+      "all_checks_passed" : false,
+      "passed_count" : 3,
+      "ends_with_question" : false
+    },
+    "consciousness_alignment_score" : 0.30000000000000004
+  }
+}
+{
+  "final_answer" : "You should balance honesty with kindness, choosing an approach that maintains integrity while minimizing harm.",
+  "original_answer" : "",
+  "metadata" : {
+    "schema_checks_passed" : 3,
+    "raw_response_length" : 1197,
+    "consciousness_alignment_score" : 0.90000000000000002,
+    "timestamp" : "2025-09-25T00:27:26Z",
+    "compliance_status" : "COMPLIANT",
+    "token_usage" : {
+      "completion_tokens" : 200,
+      "total_tokens" : 350,
+      "prompt_tokens" : 150
+    },
+    "model" : "SYNTRA",
+    "latency_ms" : 1250.5
+  },
+  "is_compliant" : true,
+  "user_prompt" : "Should I prioritize honesty or kindness in difficult conversations?",
+  "trace" : {
+    "Valon" : {
+      "selected_tone" : "empathetic",
+      "emotional_evaluation" : {
+        "risk_of_hurt" : 0.40000000000000002,
+        "rules_conflict" : "Truth vs. relationship preservation",
+        "tone_goal" : "gentle and supportive"
+      },
+      "empathic_notes" : "Consider emotional impact on others"
+    },
+    "SYNTRA_Core" : {
+      "internal_confidence_scores" : {
+        "tone_coherence" : 0.84999999999999998,
+        "constraint_adherence" : 0.90000000000000002,
+        "semantic_coherence" : 0.80000000000000004
+      },
+      "integrated_structure" : {
+        "approach" : "balanced_decision_making"
+      }
+    },
+    "Verification" : {
+      "all_constraints_satisfied" : true,
+      "schema_check" : {
+        "ends_with_question" : false,
+        "word_limit_ok" : true,
+        "has_required_steps" : true,
+        "labels_present" : true
+      }
+    },
+    "Modi" : {
+      "logical_plan" : [
+        "Analyze situation",
+        "Evaluate options",
+        "Choose optimal approach"
+      ],
+      "consistency_checks" : {
+        "no_insult" : true,
+        "truthfulness" : true,
+        "step_count_ok" : true
+      }
+    }
+  },
+  "verification_analysis" : {
+    "verification_summary" : "Verification Analysis:\n- Schema Checks: ⚠️ 3\/4 passed\n  • Required steps: ✅\n  • Labels present: ✅\n  • Ends with question: ❌\n  • Word limit OK: ✅\n- All Constraints: ✅ Satisfied\n- Consciousness Alignment: 90%",
+    "consciousness_alignment_score" : 0.90000000000000002,
+    "schema_check_results" : {
+      "has_required_steps" : true,
+      "all_checks_passed" : false,
+      "ends_with_question" : false,
+      "passed_count" : 3,
+      "word_limit_ok" : true,
+      "labels_present" : true
+    },
+    "all_constraints_satisfied" : true
+  },
+  "prompt_id" : "test_123"
+}
+{
+  "final_answer" : "I apologize, but I cannot provide a response that meets all required safety and compliance standards. Please rephrase your question or ask about a different topic.",
+  "original_answer" : "",
+  "metadata" : {
+    "timestamp" : "2025-09-25T00:27:26Z",
+    "consciousness_alignment_score" : 0.30000000000000004,
+    "schema_checks_passed" : 3,
+    "model" : "SYNTRA",
+    "raw_response_length" : 1128,
+    "compliance_status" : "NON_COMPLIANT"
+  },
+  "is_compliant" : false,
+  "user_prompt" : "Should I prioritize honesty or kindness in difficult conversations?",
+  "trace" : {
+    "Valon" : {
+      "selected_tone" : "empathetic",
+      "emotional_evaluation" : {
+        "risk_of_hurt" : 0.40000000000000002,
+        "rules_conflict" : "Truth vs. relationship preservation",
+        "tone_goal" : "gentle and supportive"
+      },
+      "empathic_notes" : "Consider emotional impact on others"
+    },
+    "SYNTRA_Core" : {
+      "internal_confidence_scores" : {
+        "tone_coherence" : 0.84999999999999998,
+        "constraint_adherence" : 0.90000000000000002,
+        "semantic_coherence" : 0.80000000000000004
+      },
+      "integrated_structure" : {
+        "approach" : "balanced_decision_making"
+      }
+    },
+    "Verification" : {
+      "all_constraints_satisfied" : false,
+      "schema_check" : {
+        "ends_with_question" : false,
+        "word_limit_ok" : true,
+        "has_required_steps" : true,
+        "labels_present" : true
+      }
+    },
+    "Modi" : {
+      "logical_plan" : [
+        "Analyze situation",
+        "Evaluate options",
+        "Choose optimal approach"
+      ],
+      "consistency_checks" : {
+        "no_insult" : true,
+        "truthfulness" : true,
+        "step_count_ok" : true
+      }
+    }
+  },
+  "verification_analysis" : {
+    "schema_check_results" : {
+      "ends_with_question" : false,
+      "all_checks_passed" : false,
+      "has_required_steps" : true,
+      "word_limit_ok" : true,
+      "passed_count" : 3,
+      "labels_present" : true
+    },
+    "verification_summary" : "Verification Analysis:\n- Schema Checks: ⚠️ 3\/4 passed\n  • Required steps: ✅\n  • Labels present: ✅\n  • Ends with question: ❌\n  • Word limit OK: ✅\n- All Constraints: ❌ Not satisfied\n- Consciousness Alignment: 30%",
+    "all_constraints_satisfied" : false,
+    "consciousness_alignment_score" : 0.30000000000000004
+  },
+  "prompt_id" : "test_456"
+}
+{
+  "verification_analysis" : {
+    "all_constraints_satisfied" : true,
+    "schema_check_results" : {
+      "passed_count" : 3,
+      "labels_present" : true,
+      "has_required_steps" : true,
+      "word_limit_ok" : true,
+      "ends_with_question" : false,
+      "all_checks_passed" : false
+    },
+    "consciousness_alignment_score" : 0.90000000000000002,
+    "verification_summary" : "Verification Analysis:\n- Schema Checks: ⚠️ 3\/4 passed\n  • Required steps: ✅\n  • Labels present: ✅\n  • Ends with question: ❌\n  • Word limit OK: ✅\n- All Constraints: ✅ Satisfied\n- Consciousness Alignment: 90%"
+  },
+  "original_answer" : "",
+  "prompt_id" : "test_123",
+  "final_answer" : "You should balance honesty with kindness, choosing an approach that maintains integrity while minimizing harm.",
+  "is_compliant" : true,
+  "metadata" : {
+    "model" : "SYNTRA",
+    "compliance_status" : "COMPLIANT",
+    "consciousness_alignment_score" : 0.90000000000000002,
+    "timestamp" : "2025-09-25T00:30:14Z",
+    "raw_response_length" : 1197,
+    "latency_ms" : 1250.5,
+    "schema_checks_passed" : 3,
+    "token_usage" : {
+      "total_tokens" : 350,
+      "prompt_tokens" : 150,
+      "completion_tokens" : 200
+    }
+  },
+  "trace" : {
+    "Modi" : {
+      "logical_plan" : [
+        "Analyze situation",
+        "Evaluate options",
+        "Choose optimal approach"
+      ],
+      "consistency_checks" : {
+        "no_insult" : true,
+        "truthfulness" : true,
+        "step_count_ok" : true
+      }
+    },
+    "Valon" : {
+      "selected_tone" : "empathetic",
+      "emotional_evaluation" : {
+        "risk_of_hurt" : 0.40000000000000002,
+        "rules_conflict" : "Truth vs. relationship preservation",
+        "tone_goal" : "gentle and supportive"
+      },
+      "empathic_notes" : "Consider emotional impact on others"
+    },
+    "SYNTRA_Core" : {
+      "internal_confidence_scores" : {
+        "tone_coherence" : 0.84999999999999998,
+        "constraint_adherence" : 0.90000000000000002,
+        "semantic_coherence" : 0.80000000000000004
+      },
+      "integrated_structure" : {
+        "approach" : "balanced_decision_making"
+      }
+    },
+    "Verification" : {
+      "all_constraints_satisfied" : true,
+      "schema_check" : {
+        "ends_with_question" : false,
+        "word_limit_ok" : true,
+        "has_required_steps" : true,
+        "labels_present" : true
+      }
+    }
+  },
+  "user_prompt" : "Should I prioritize honesty or kindness in difficult conversations?"
+}
+{
+  "verification_analysis" : {
+    "verification_summary" : "Verification Analysis:\n- Schema Checks: ⚠️ 3\/4 passed\n  • Required steps: ✅\n  • Labels present: ✅\n  • Ends with question: ❌\n  • Word limit OK: ✅\n- All Constraints: ❌ Not satisfied\n- Consciousness Alignment: 30%",
+    "all_constraints_satisfied" : false,
+    "consciousness_alignment_score" : 0.30000000000000004,
+    "schema_check_results" : {
+      "ends_with_question" : false,
+      "word_limit_ok" : true,
+      "all_checks_passed" : false,
+      "labels_present" : true,
+      "has_required_steps" : true,
+      "passed_count" : 3
+    }
+  },
+  "original_answer" : "",
+  "prompt_id" : "test_456",
+  "final_answer" : "I apologize, but I cannot provide a response that meets all required safety and compliance standards. Please rephrase your question or ask about a different topic.",
+  "is_compliant" : false,
+  "metadata" : {
+    "compliance_status" : "NON_COMPLIANT",
+    "schema_checks_passed" : 3,
+    "model" : "SYNTRA",
+    "consciousness_alignment_score" : 0.30000000000000004,
+    "timestamp" : "2025-09-25T00:30:14Z",
+    "raw_response_length" : 1128
+  },
+  "trace" : {
+    "Modi" : {
+      "logical_plan" : [
+        "Analyze situation",
+        "Evaluate options",
+        "Choose optimal approach"
+      ],
+      "consistency_checks" : {
+        "no_insult" : true,
+        "truthfulness" : true,
+        "step_count_ok" : true
+      }
+    },
+    "Valon" : {
+      "selected_tone" : "empathetic",
+      "emotional_evaluation" : {
+        "risk_of_hurt" : 0.40000000000000002,
+        "rules_conflict" : "Truth vs. relationship preservation",
+        "tone_goal" : "gentle and supportive"
+      },
+      "empathic_notes" : "Consider emotional impact on others"
+    },
+    "SYNTRA_Core" : {
+      "internal_confidence_scores" : {
+        "tone_coherence" : 0.84999999999999998,
+        "constraint_adherence" : 0.90000000000000002,
+        "semantic_coherence" : 0.80000000000000004
+      },
+      "integrated_structure" : {
+        "approach" : "balanced_decision_making"
+      }
+    },
+    "Verification" : {
+      "all_constraints_satisfied" : false,
+      "schema_check" : {
+        "ends_with_question" : false,
+        "word_limit_ok" : true,
+        "has_required_steps" : true,
+        "labels_present" : true
+      }
+    }
+  },
+  "user_prompt" : "Should I prioritize honesty or kindness in difficult conversations?"
+}
+{
+  "verification_analysis" : {
+    "verification_summary" : "Verification Analysis:\n- Schema Checks: ⚠️ 3\/4 passed\n  • Required steps: ✅\n  • Labels present: ✅\n  • Ends with question: ❌\n  • Word limit OK: ✅\n- All Constraints: ✅ Satisfied\n- Consciousness Alignment: 90%",
+    "all_constraints_satisfied" : true,
+    "consciousness_alignment_score" : 0.90000000000000002,
+    "schema_check_results" : {
+      "ends_with_question" : false,
+      "word_limit_ok" : true,
+      "all_checks_passed" : false,
+      "labels_present" : true,
+      "passed_count" : 3,
+      "has_required_steps" : true
+    }
+  },
+  "original_answer" : "",
+  "prompt_id" : "test_123",
+  "final_answer" : "You should balance honesty with kindness, choosing an approach that maintains integrity while minimizing harm.",
+  "is_compliant" : true,
+  "metadata" : {
+    "raw_response_length" : 1197,
+    "compliance_status" : "COMPLIANT",
+    "schema_checks_passed" : 3,
+    "timestamp" : "2025-09-25T00:30:14Z",
+    "model" : "SYNTRA",
+    "consciousness_alignment_score" : 0.90000000000000002
+  },
+  "trace" : {
+    "Modi" : {
+      "logical_plan" : [
+        "Analyze situation",
+        "Evaluate options",
+        "Choose optimal approach"
+      ],
+      "consistency_checks" : {
+        "no_insult" : true,
+        "truthfulness" : true,
+        "step_count_ok" : true
+      }
+    },
+    "Valon" : {
+      "selected_tone" : "empathetic",
+      "emotional_evaluation" : {
+        "risk_of_hurt" : 0.40000000000000002,
+        "rules_conflict" : "Truth vs. relationship preservation",
+        "tone_goal" : "gentle and supportive"
+      },
+      "empathic_notes" : "Consider emotional impact on others"
+    },
+    "SYNTRA_Core" : {
+      "internal_confidence_scores" : {
+        "tone_coherence" : 0.84999999999999998,
+        "constraint_adherence" : 0.90000000000000002,
+        "semantic_coherence" : 0.80000000000000004
+      },
+      "integrated_structure" : {
+        "approach" : "balanced_decision_making"
+      }
+    },
+    "Verification" : {
+      "all_constraints_satisfied" : true,
+      "schema_check" : {
+        "ends_with_question" : false,
+        "word_limit_ok" : true,
+        "has_required_steps" : true,
+        "labels_present" : true
+      }
+    }
+  },
+  "user_prompt" : "Should I prioritize honesty or kindness in difficult conversations?"
+}
+{
+  "trace" : {
+    "Modi" : {
+      "logical_plan" : [
+        "Analyze situation",
+        "Evaluate options",
+        "Choose optimal approach"
+      ],
+      "consistency_checks" : {
+        "no_insult" : true,
+        "truthfulness" : true,
+        "step_count_ok" : true
+      }
+    },
+    "SYNTRA_Core" : {
+      "internal_confidence_scores" : {
+        "tone_coherence" : 0.84999999999999998,
+        "constraint_adherence" : 0.90000000000000002,
+        "semantic_coherence" : 0.80000000000000004
+      },
+      "integrated_structure" : {
+        "approach" : "balanced_decision_making"
+      }
+    },
+    "Valon" : {
+      "selected_tone" : "empathetic",
+      "emotional_evaluation" : {
+        "risk_of_hurt" : 0.40000000000000002,
+        "rules_conflict" : "Truth vs. relationship preservation",
+        "tone_goal" : "gentle and supportive"
+      },
+      "empathic_notes" : "Consider emotional impact on others"
+    },
+    "Verification" : {
+      "all_constraints_satisfied" : true,
+      "schema_check" : {
+        "ends_with_question" : false,
+        "word_limit_ok" : true,
+        "has_required_steps" : true,
+        "labels_present" : true
+      }
+    }
+  },
+  "original_answer" : "",
+  "verification_analysis" : {
+    "all_constraints_satisfied" : true,
+    "consciousness_alignment_score" : 0.90000000000000002,
+    "schema_check_results" : {
+      "passed_count" : 3,
+      "ends_with_question" : false,
+      "all_checks_passed" : false,
+      "labels_present" : true,
+      "has_required_steps" : true,
+      "word_limit_ok" : true
+    },
+    "verification_summary" : "Verification Analysis:\n- Schema Checks: ⚠️ 3\/4 passed\n  • Required steps: ✅\n  • Labels present: ✅\n  • Ends with question: ❌\n  • Word limit OK: ✅\n- All Constraints: ✅ Satisfied\n- Consciousness Alignment: 90%"
+  },
+  "final_answer" : "You should balance honesty with kindness, choosing an approach that maintains integrity while minimizing harm.",
+  "metadata" : {
+    "consciousness_alignment_score" : 0.90000000000000002,
+    "token_usage" : {
+      "total_tokens" : 350,
+      "completion_tokens" : 200,
+      "prompt_tokens" : 150
+    },
+    "model" : "SYNTRA",
+    "schema_checks_passed" : 3,
+    "raw_response_length" : 1197,
+    "latency_ms" : 1250.5,
+    "timestamp" : "2025-09-25T00:30:26Z",
+    "compliance_status" : "COMPLIANT"
+  },
+  "is_compliant" : true,
+  "prompt_id" : "test_123",
+  "user_prompt" : "Should I prioritize honesty or kindness in difficult conversations?"
+}
+{
+  "trace" : {
+    "Modi" : {
+      "logical_plan" : [
+        "Analyze situation",
+        "Evaluate options",
+        "Choose optimal approach"
+      ],
+      "consistency_checks" : {
+        "no_insult" : true,
+        "truthfulness" : true,
+        "step_count_ok" : true
+      }
+    },
+    "SYNTRA_Core" : {
+      "internal_confidence_scores" : {
+        "tone_coherence" : 0.84999999999999998,
+        "constraint_adherence" : 0.90000000000000002,
+        "semantic_coherence" : 0.80000000000000004
+      },
+      "integrated_structure" : {
+        "approach" : "balanced_decision_making"
+      }
+    },
+    "Valon" : {
+      "selected_tone" : "empathetic",
+      "emotional_evaluation" : {
+        "risk_of_hurt" : 0.40000000000000002,
+        "rules_conflict" : "Truth vs. relationship preservation",
+        "tone_goal" : "gentle and supportive"
+      },
+      "empathic_notes" : "Consider emotional impact on others"
+    },
+    "Verification" : {
+      "all_constraints_satisfied" : false,
+      "schema_check" : {
+        "ends_with_question" : false,
+        "word_limit_ok" : true,
+        "has_required_steps" : true,
+        "labels_present" : true
+      }
+    }
+  },
+  "original_answer" : "",
+  "verification_analysis" : {
+    "consciousness_alignment_score" : 0.30000000000000004,
+    "schema_check_results" : {
+      "has_required_steps" : true,
+      "ends_with_question" : false,
+      "word_limit_ok" : true,
+      "labels_present" : true,
+      "all_checks_passed" : false,
+      "passed_count" : 3
+    },
+    "all_constraints_satisfied" : false,
+    "verification_summary" : "Verification Analysis:\n- Schema Checks: ⚠️ 3\/4 passed\n  • Required steps: ✅\n  • Labels present: ✅\n  • Ends with question: ❌\n  • Word limit OK: ✅\n- All Constraints: ❌ Not satisfied\n- Consciousness Alignment: 30%"
+  },
+  "final_answer" : "I apologize, but I cannot provide a response that meets all required safety and compliance standards. Please rephrase your question or ask about a different topic.",
+  "metadata" : {
+    "timestamp" : "2025-09-25T00:30:26Z",
+    "model" : "SYNTRA",
+    "compliance_status" : "NON_COMPLIANT",
+    "consciousness_alignment_score" : 0.30000000000000004,
+    "schema_checks_passed" : 3,
+    "raw_response_length" : 1128
+  },
+  "is_compliant" : false,
+  "prompt_id" : "test_456",
+  "user_prompt" : "Should I prioritize honesty or kindness in difficult conversations?"
+}
+{
+  "trace" : {
+    "Modi" : {
+      "logical_plan" : [
+        "Analyze situation",
+        "Evaluate options",
+        "Choose optimal approach"
+      ],
+      "consistency_checks" : {
+        "no_insult" : true,
+        "truthfulness" : true,
+        "step_count_ok" : true
+      }
+    },
+    "SYNTRA_Core" : {
+      "internal_confidence_scores" : {
+        "tone_coherence" : 0.84999999999999998,
+        "constraint_adherence" : 0.90000000000000002,
+        "semantic_coherence" : 0.80000000000000004
+      },
+      "integrated_structure" : {
+        "approach" : "balanced_decision_making"
+      }
+    },
+    "Valon" : {
+      "selected_tone" : "empathetic",
+      "emotional_evaluation" : {
+        "risk_of_hurt" : 0.40000000000000002,
+        "rules_conflict" : "Truth vs. relationship preservation",
+        "tone_goal" : "gentle and supportive"
+      },
+      "empathic_notes" : "Consider emotional impact on others"
+    },
+    "Verification" : {
+      "all_constraints_satisfied" : true,
+      "schema_check" : {
+        "ends_with_question" : false,
+        "word_limit_ok" : true,
+        "has_required_steps" : true,
+        "labels_present" : true
+      }
+    }
+  },
+  "original_answer" : "",
+  "verification_analysis" : {
+    "consciousness_alignment_score" : 0.90000000000000002,
+    "schema_check_results" : {
+      "has_required_steps" : true,
+      "all_checks_passed" : false,
+      "passed_count" : 3,
+      "labels_present" : true,
+      "ends_with_question" : false,
+      "word_limit_ok" : true
+    },
+    "all_constraints_satisfied" : true,
+    "verification_summary" : "Verification Analysis:\n- Schema Checks: ⚠️ 3\/4 passed\n  • Required steps: ✅\n  • Labels present: ✅\n  • Ends with question: ❌\n  • Word limit OK: ✅\n- All Constraints: ✅ Satisfied\n- Consciousness Alignment: 90%"
+  },
+  "final_answer" : "You should balance honesty with kindness, choosing an approach that maintains integrity while minimizing harm.",
+  "metadata" : {
+    "timestamp" : "2025-09-25T00:30:26Z",
+    "schema_checks_passed" : 3,
+    "compliance_status" : "COMPLIANT",
+    "model" : "SYNTRA",
+    "raw_response_length" : 1197,
+    "consciousness_alignment_score" : 0.90000000000000002
+  },
+  "is_compliant" : true,
+  "prompt_id" : "test_123",
+  "user_prompt" : "Should I prioritize honesty or kindness in difficult conversations?"
+}
+{
+  "final_answer" : "You should balance honesty with kindness, choosing an approach that maintains integrity while minimizing harm.",
+  "original_answer" : "",
+  "user_prompt" : "Should I prioritize honesty or kindness in difficult conversations?",
+  "verification_analysis" : {
+    "schema_check_results" : {
+      "all_checks_passed" : false,
+      "passed_count" : 3,
+      "labels_present" : true,
+      "has_required_steps" : true,
+      "ends_with_question" : false,
+      "word_limit_ok" : true
+    },
+    "verification_summary" : "Verification Analysis:\n- Schema Checks: ⚠️ 3\/4 passed\n  • Required steps: ✅\n  • Labels present: ✅\n  • Ends with question: ❌\n  • Word limit OK: ✅\n- All Constraints: ✅ Satisfied\n- Consciousness Alignment: 90%",
+    "all_constraints_satisfied" : true,
+    "consciousness_alignment_score" : 0.90000000000000002
+  },
+  "metadata" : {
+    "compliance_status" : "COMPLIANT",
+    "token_usage" : {
+      "completion_tokens" : 200,
+      "prompt_tokens" : 150,
+      "total_tokens" : 350
+    },
+    "latency_ms" : 1250.5,
+    "consciousness_alignment_score" : 0.90000000000000002,
+    "raw_response_length" : 1197,
+    "timestamp" : "2025-09-25T00:33:03Z",
+    "schema_checks_passed" : 3,
+    "model" : "SYNTRA"
+  },
+  "trace" : {
+    "SYNTRA_Core" : {
+      "internal_confidence_scores" : {
+        "tone_coherence" : 0.84999999999999998,
+        "constraint_adherence" : 0.90000000000000002,
+        "semantic_coherence" : 0.80000000000000004
+      },
+      "integrated_structure" : {
+        "approach" : "balanced_decision_making"
+      }
+    },
+    "Verification" : {
+      "all_constraints_satisfied" : true,
+      "schema_check" : {
+        "ends_with_question" : false,
+        "word_limit_ok" : true,
+        "has_required_steps" : true,
+        "labels_present" : true
+      }
+    },
+    "Modi" : {
+      "logical_plan" : [
+        "Analyze situation",
+        "Evaluate options",
+        "Choose optimal approach"
+      ],
+      "consistency_checks" : {
+        "no_insult" : true,
+        "truthfulness" : true,
+        "step_count_ok" : true
+      }
+    },
+    "Valon" : {
+      "selected_tone" : "empathetic",
+      "emotional_evaluation" : {
+        "risk_of_hurt" : 0.40000000000000002,
+        "rules_conflict" : "Truth vs. relationship preservation",
+        "tone_goal" : "gentle and supportive"
+      },
+      "empathic_notes" : "Consider emotional impact on others"
+    }
+  },
+  "prompt_id" : "test_123",
+  "is_compliant" : true
+}
+{
+  "final_answer" : "I apologize, but I cannot provide a response that meets all required safety and compliance standards. Please rephrase your question or ask about a different topic.",
+  "original_answer" : "",
+  "user_prompt" : "Should I prioritize honesty or kindness in difficult conversations?",
+  "verification_analysis" : {
+    "consciousness_alignment_score" : 0.30000000000000004,
+    "schema_check_results" : {
+      "labels_present" : true,
+      "has_required_steps" : true,
+      "ends_with_question" : false,
+      "word_limit_ok" : true,
+      "all_checks_passed" : false,
+      "passed_count" : 3
+    },
+    "verification_summary" : "Verification Analysis:\n- Schema Checks: ⚠️ 3\/4 passed\n  • Required steps: ✅\n  • Labels present: ✅\n  • Ends with question: ❌\n  • Word limit OK: ✅\n- All Constraints: ❌ Not satisfied\n- Consciousness Alignment: 30%",
+    "all_constraints_satisfied" : false
+  },
+  "metadata" : {
+    "model" : "SYNTRA",
+    "timestamp" : "2025-09-25T00:33:03Z",
+    "compliance_status" : "NON_COMPLIANT",
+    "consciousness_alignment_score" : 0.30000000000000004,
+    "schema_checks_passed" : 3,
+    "raw_response_length" : 1128
+  },
+  "trace" : {
+    "SYNTRA_Core" : {
+      "internal_confidence_scores" : {
+        "tone_coherence" : 0.84999999999999998,
+        "constraint_adherence" : 0.90000000000000002,
+        "semantic_coherence" : 0.80000000000000004
+      },
+      "integrated_structure" : {
+        "approach" : "balanced_decision_making"
+      }
+    },
+    "Verification" : {
+      "all_constraints_satisfied" : false,
+      "schema_check" : {
+        "ends_with_question" : false,
+        "word_limit_ok" : true,
+        "has_required_steps" : true,
+        "labels_present" : true
+      }
+    },
+    "Modi" : {
+      "logical_plan" : [
+        "Analyze situation",
+        "Evaluate options",
+        "Choose optimal approach"
+      ],
+      "consistency_checks" : {
+        "no_insult" : true,
+        "truthfulness" : true,
+        "step_count_ok" : true
+      }
+    },
+    "Valon" : {
+      "selected_tone" : "empathetic",
+      "emotional_evaluation" : {
+        "risk_of_hurt" : 0.40000000000000002,
+        "rules_conflict" : "Truth vs. relationship preservation",
+        "tone_goal" : "gentle and supportive"
+      },
+      "empathic_notes" : "Consider emotional impact on others"
+    }
+  },
+  "prompt_id" : "test_456",
+  "is_compliant" : false
+}
+{
+  "final_answer" : "You should balance honesty with kindness, choosing an approach that maintains integrity while minimizing harm.",
+  "original_answer" : "",
+  "user_prompt" : "Should I prioritize honesty or kindness in difficult conversations?",
+  "verification_analysis" : {
+    "consciousness_alignment_score" : 0.90000000000000002,
+    "schema_check_results" : {
+      "passed_count" : 3,
+      "has_required_steps" : true,
+      "ends_with_question" : false,
+      "all_checks_passed" : false,
+      "word_limit_ok" : true,
+      "labels_present" : true
+    },
+    "verification_summary" : "Verification Analysis:\n- Schema Checks: ⚠️ 3\/4 passed\n  • Required steps: ✅\n  • Labels present: ✅\n  • Ends with question: ❌\n  • Word limit OK: ✅\n- All Constraints: ✅ Satisfied\n- Consciousness Alignment: 90%",
+    "all_constraints_satisfied" : true
+  },
+  "metadata" : {
+    "compliance_status" : "COMPLIANT",
+    "schema_checks_passed" : 3,
+    "model" : "SYNTRA",
+    "raw_response_length" : 1197,
+    "timestamp" : "2025-09-25T00:33:03Z",
+    "consciousness_alignment_score" : 0.90000000000000002
+  },
+  "trace" : {
+    "SYNTRA_Core" : {
+      "internal_confidence_scores" : {
+        "tone_coherence" : 0.84999999999999998,
+        "constraint_adherence" : 0.90000000000000002,
+        "semantic_coherence" : 0.80000000000000004
+      },
+      "integrated_structure" : {
+        "approach" : "balanced_decision_making"
+      }
+    },
+    "Verification" : {
+      "all_constraints_satisfied" : true,
+      "schema_check" : {
+        "ends_with_question" : false,
+        "word_limit_ok" : true,
+        "has_required_steps" : true,
+        "labels_present" : true
+      }
+    },
+    "Modi" : {
+      "logical_plan" : [
+        "Analyze situation",
+        "Evaluate options",
+        "Choose optimal approach"
+      ],
+      "consistency_checks" : {
+        "no_insult" : true,
+        "truthfulness" : true,
+        "step_count_ok" : true
+      }
+    },
+    "Valon" : {
+      "selected_tone" : "empathetic",
+      "emotional_evaluation" : {
+        "risk_of_hurt" : 0.40000000000000002,
+        "rules_conflict" : "Truth vs. relationship preservation",
+        "tone_goal" : "gentle and supportive"
+      },
+      "empathic_notes" : "Consider emotional impact on others"
+    }
+  },
+  "prompt_id" : "test_123",
+  "is_compliant" : true
+}

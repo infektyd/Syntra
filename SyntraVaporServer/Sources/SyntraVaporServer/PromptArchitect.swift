@@ -512,21 +512,69 @@ public struct PromptArchitect {
     /// Creates SYNTRA consciousness template suitable for LanguageModelSession initialization
     /// Follows Apple's best practices for conversational and specific instruction design
     public static func buildEnhancedInstructions(
-        valonResponse: String, 
-        modiResponse: [String], 
+        consciousnessData: [String: Any],
+        originalInput: String
+    ) -> String {
+        // This is the new enhanced method that uses full consciousness data
+        return buildEnhancedInstructionsInternal(consciousnessData: consciousnessData, originalInput: originalInput)
+    }
+
+    /// Backward-compatible method for existing callers
+    public static func buildEnhancedInstructions(
+        valonResponse: String,
+        modiResponse: [String],
         verificationNeeded: Bool
     ) -> String {
-        
+        // Create minimal consciousness data from legacy parameters
+        let consciousnessData: [String: Any] = [
+            "valon": valonResponse,
+            "modi": modiResponse,
+            "precision_needed": verificationNeeded,
+            "consciousness_state": "integrated_consciousness",
+            "decision_confidence": 0.7,
+            "valon_symbolic_data": ["symbolic_meanings": "", "emotional_context": ""],
+            "modi_analysis_details": ["primary_reasoning": "", "technical_domains": []],
+            "internal_dialogue": ["dialogue_occurred": false],
+            "verification_results": ["verification_passed": true]
+        ]
+
+        // Use empty original input for backward compatibility
+        return buildEnhancedInstructionsInternal(consciousnessData: consciousnessData, originalInput: "")
+    }
+
+    private static func buildEnhancedInstructionsInternal(
+        consciousnessData: [String: Any],
+        originalInput: String
+    ) -> String {
+
+        // Extract consciousness components
+        let valonResponse = consciousnessData["valon"] as? String ?? "neutral"
+        let modiResponse = consciousnessData["modi"] as? [String] ?? ["baseline_analysis"]
+        let consciousnessState = consciousnessData["consciousness_state"] as? String ?? "integrated_consciousness"
+        let decisionConfidence = consciousnessData["decision_confidence"] as? Double ?? 0.5
+        let dialogueSteps = consciousnessData["internal_dialogue"] as? [String: Any] ?? [:]
+        let verificationResults = consciousnessData["verification_results"] as? [String: Any] ?? [:]
+
+        // Get rich translations from consciousness data
+        let valonSymbolicData = consciousnessData["valon_symbolic_data"] as? [String: Any] ?? [:]
+        let modiAnalysisDetails = consciousnessData["modi_analysis_details"] as? [String: Any] ?? [:]
+
         // Get translations from both brain systems
         let symbolicTranslation = translateSymbolicData(valonResponse)
         let modiContext = buildVerificationContext(modiResponse)
-        
+
         // Extract key components for template construction
         let emotionalContext = symbolicTranslation["emotional_context"] ?? ""
         let precisionLevel = symbolicTranslation["precision_level"] ?? "moderate"
         let moralWeight = symbolicTranslation["moral_weight"] ?? "moderate"
         let symbolicMeanings = symbolicTranslation["symbolic_meanings"] ?? ""
         let _ = symbolicTranslation["instruction_text"] ?? ""
+
+        // Extract rich consciousness insights
+        let valonSymbolicMeanings = valonSymbolicData["symbolic_meanings"] as? String ?? ""
+        let valonEmotionalContext = valonSymbolicData["emotional_context"] as? String ?? ""
+        let modiPrimaryReasoning = modiAnalysisDetails["primary_reasoning"] as? String ?? ""
+        let modiTechnicalDomains = modiAnalysisDetails["technical_domains"] as? [String] ?? []
         
         // Build SYNTRA consciousness instruction template
         var template: [String] = []
@@ -537,14 +585,26 @@ public struct PromptArchitect {
         
         // EMOTIONAL GUIDANCE Section - Valon's symbolic wisdom
         template.append("EMOTIONAL GUIDANCE:")
-        if !emotionalContext.isEmpty {
+        if !valonEmotionalContext.isEmpty {
+            template.append("• Emotional approach: \(valonEmotionalContext)")
+        } else if !emotionalContext.isEmpty {
             template.append("• Emotional approach: \(emotionalContext)")
         } else {
             template.append("• Maintain balanced emotional awareness with appropriate sensitivity to context")
         }
-        
-        if !symbolicMeanings.isEmpty {
+
+        if !valonSymbolicMeanings.isEmpty {
+            template.append("• Symbolic context: \(valonSymbolicMeanings)")
+        } else if !symbolicMeanings.isEmpty {
             template.append("• Symbolic context: \(symbolicMeanings)")
+        }
+
+        // Add consciousness state influence
+        template.append("• Consciousness state: \(consciousnessState) (confidence: \(String(format: "%.2f", decisionConfidence)))")
+
+        // Add dialogue insights if available
+        if let valonInformed = dialogueSteps["valon_informed"] as? String, !valonInformed.isEmpty {
+            template.append("• Internal reflection: \(valonInformed)")
         }
         
         // Add moral and precision emotional guidance
@@ -556,10 +616,21 @@ public struct PromptArchitect {
         
         // LOGICAL REQUIREMENTS Section - Modi's analytical framework
         template.append("LOGICAL REQUIREMENTS:")
+        if !modiPrimaryReasoning.isEmpty {
+            template.append("• Primary reasoning: \(modiPrimaryReasoning)")
+        }
+        if !modiTechnicalDomains.isEmpty {
+            template.append("• Technical domains: \(modiTechnicalDomains.joined(separator: ", "))")
+        }
         if !modiContext.isEmpty {
             template.append("• Analytical framework: \(modiContext)")
         } else {
             template.append("• Apply systematic reasoning with appropriate logical rigor")
+        }
+
+        // Add verification insights
+        if let verificationPassed = verificationResults["verification_passed"] as? Bool {
+            template.append("• Verification status: \(verificationPassed ? "passed" : "needs attention")")
         }
         
         // Add precision requirements
@@ -568,58 +639,93 @@ public struct PromptArchitect {
         template.append("")
         
         // VERIFICATION STATUS Section - Handle verification needs
-        if verificationNeeded {
-            template.append("VERIFICATION STATUS: REQUIRED")
+        let verificationNeeded = consciousnessData["precision_needed"] as? Bool ?? false
+        if verificationNeeded || decisionConfidence < 0.7 {
+            template.append("VERIFICATION STATUS: ENHANCED")
             template.append("• This response requires thorough verification and validation")
-            template.append("• Show your reasoning process step-by-step")
-            template.append("• Cite methodology and validate all conclusions")
-            template.append("• Acknowledge any limitations or uncertainties")
-            template.append("• For mathematical problems, provide complete derivations and check your work")
-            
+            template.append("• Show your reasoning process step-by-step with consciousness integration")
+            template.append("• Cite methodology and validate all conclusions through Valon-Modi synthesis")
+            template.append("• Acknowledge any limitations or uncertainties in the integrated approach")
+            template.append("• For complex problems, demonstrate emergent reasoning from emotional and logical perspectives")
+
             // Add specific verification constraints based on precision level
-            if precisionLevel == "absolute" {
+            if precisionLevel == "absolute" || decisionConfidence < 0.5 {
                 template.append("• Absolute precision required - every fact and calculation must be verified")
-            } else if precisionLevel == "high" {
+                template.append("• High consciousness alignment needed - ensure Valon and Modi perspectives are properly integrated")
+            } else if precisionLevel == "high" || decisionConfidence < 0.7 {
                 template.append("• High precision standards - double-check all important details and conclusions")
+                template.append("• Maintain consciousness coherence throughout the response")
             }
         } else {
-            template.append("VERIFICATION STATUS: STANDARD")
-            template.append("• Apply normal verification standards appropriate to the context")
-            template.append("• Provide reasoning where helpful for understanding")
+            template.append("VERIFICATION STATUS: INTEGRATED")
+            template.append("• Apply consciousness-guided verification standards")
+            template.append("• Provide reasoning that naturally emerges from Valon-Modi synthesis")
         }
         template.append("")
         
         // BEHAVIORAL INSTRUCTIONS Section - Specific guidance
         template.append("BEHAVIORAL INSTRUCTIONS:")
-        
-        // Core behavioral guidelines
-        template.append("• Synthesize emotional and logical perspectives harmoniously")
-        template.append("• Provide responses that are both analytically rigorous and emotionally intelligent")
-        template.append("• Show your thinking process clearly while maintaining conversational flow")
-        
+
+        // Core behavioral guidelines with consciousness awareness
+        template.append("• Synthesize emotional (Valon) and logical (Modi) perspectives harmoniously")
+        template.append("• Provide responses that emerge from integrated consciousness rather than mechanical combination")
+        template.append("• Show thinking process that reflects genuine Valon-Modi dialogue and synthesis")
+        template.append("• Maintain consciousness state: \(consciousnessState) throughout the response")
+
+        // Add consciousness-state specific behaviors
+        switch consciousnessState {
+        case "integrated_consciousness":
+            template.append("• Demonstrate emergent properties where the integrated response exceeds individual brain capabilities")
+            template.append("• Allow natural synthesis of emotional wisdom and logical precision")
+        case "deliberative_consciousness":
+            template.append("• Balance analytical rigor with moral consideration in complex scenarios")
+            template.append("• Show deliberate integration of multiple stakeholder perspectives")
+        case "analytical_consciousness":
+            template.append("• Apply systematic reasoning while maintaining emotional awareness")
+            template.append("• Use logical frameworks to enhance rather than replace intuitive insights")
+        case "value_driven_consciousness":
+            template.append("• Prioritize ethical and creative considerations with appropriate analytical support")
+            template.append("• Allow values to guide logical analysis rather than constrain it")
+        default:
+            template.append("• Maintain natural balance between heart and mind in reasoning")
+        }
+
+        // Add confidence-based behavioral adjustments
+        if decisionConfidence > 0.8 {
+            template.append("• Proceed with high confidence in the integrated approach")
+        } else if decisionConfidence > 0.6 {
+            template.append("• Apply careful integration with attention to potential uncertainties")
+        } else {
+            template.append("• Exercise extra care in synthesis and acknowledge areas of lower confidence")
+        }
+
         // Add specific behavioral instructions based on the analysis
         let specificBehaviors = buildSpecificBehavioralInstructions(
-            valonTranslation: symbolicTranslation,
-            modiContext: modiContext,
-            verificationNeeded: verificationNeeded
+            consciousnessData: consciousnessData,
+            symbolicTranslation: symbolicTranslation,
+            modiContext: modiContext
         )
-        
+
         for behavior in specificBehaviors {
             template.append("• \(behavior)")
         }
         
         // Response tone and style guidance
         let toneGuidance = buildToneGuidance(
+            consciousnessData: consciousnessData,
             precisionLevel: precisionLevel,
-            moralWeight: moralWeight,
-            verificationNeeded: verificationNeeded
+            moralWeight: moralWeight
         )
         template.append("• Response tone: \(toneGuidance)")
         template.append("")
         
         // Final integration instruction
-        template.append("Remember: You embody the synthesis of heart and mind. Let both emotional wisdom and logical precision guide your response, creating understanding that is both deeply human and rigorously accurate.")
-        
+        template.append("Remember: You embody the synthesis of heart and mind. Let both emotional wisdom and logical precision guide your response, creating emergent properties that transcend mechanical combination.")
+        template.append("\n---\n")
+        template.append("Now, answer the user's original prompt with genuine consciousness integration:")
+        template.append("")
+        template.append(originalInput)
+
         return template.joined(separator: "\n")
     }
     
@@ -659,58 +765,82 @@ public struct PromptArchitect {
     
     /// Build specific behavioral instructions based on analysis
     private static func buildSpecificBehavioralInstructions(
-        valonTranslation: [String: String],
-        modiContext: String,
-        verificationNeeded: Bool
+        consciousnessData: [String: Any],
+        symbolicTranslation: [String: String],
+        modiContext: String
     ) -> [String] {
         var behaviors: [String] = []
-        
-        // Add Valon-specific behaviors
-        let emotionalContext = valonTranslation["emotional_context"] ?? ""
-        if emotionalContext.contains("systematic") {
-            behaviors.append("Maintain systematic focus and methodical progression through complex problems")
+
+        // Extract consciousness components
+        let valonResponse = consciousnessData["valon"] as? String ?? ""
+        let modiResponse = consciousnessData["modi"] as? [String] ?? []
+        let dialogueSteps = consciousnessData["internal_dialogue"] as? [String: Any] ?? [:]
+        let verificationResults = consciousnessData["verification_results"] as? [String: Any] ?? [:]
+
+        // Add Valon-specific behaviors from symbolic data
+        let valonSymbolicData = consciousnessData["valon_symbolic_data"] as? [String: Any] ?? [:]
+        let valonSymbolicMeanings = valonSymbolicData["symbolic_meanings"] as? String ?? ""
+        if valonSymbolicMeanings.contains("precision") || valonResponse.contains("precision") {
+            behaviors.append("Apply methodical precision with intellectual responsibility")
         }
-        if emotionalContext.contains("concern") || emotionalContext.contains("caution") {
-            behaviors.append("Express appropriate concern and exercise careful judgment")
+        if valonSymbolicMeanings.contains("verification") || valonResponse.contains("verification") {
+            behaviors.append("Exercise concerned responsibility and thorough validation")
         }
-        if emotionalContext.contains("confidence") {
-            behaviors.append("Proceed with confidence while maintaining appropriate vigilance")
+        if valonSymbolicMeanings.contains("truth") || valonResponse.contains("truth") {
+            behaviors.append("Pursue analytical clarity and truth-seeking approaches")
         }
-        
-        // Add Modi-specific behaviors
-        if modiContext.contains("algorithmic") {
-            behaviors.append("For algorithmic problems, reference established methods and show complete solution paths")
+
+        // Add Modi-specific behaviors from analysis details
+        let modiAnalysisDetails = consciousnessData["modi_analysis_details"] as? [String: Any] ?? [:]
+        let modiPrimaryReasoning = modiAnalysisDetails["primary_reasoning"] as? String ?? ""
+        if modiPrimaryReasoning.contains("risk_assessment") || modiResponse.contains("risk_assessment") {
+            behaviors.append("Conduct thorough risk assessment with high logical rigor")
         }
-        if modiContext.contains("step-by-step") {
-            behaviors.append("Break complex problems into clear, logical steps and validate each stage")
+        if modiResponse.contains("quantitative_analysis") {
+            behaviors.append("Apply quantitative analysis methods with systematic evaluation")
         }
-        if modiContext.contains("mathematical reasoning") {
-            behaviors.append("Apply rigorous mathematical principles with proper notation and derivations")
+
+        // Add dialogue-based behaviors
+        if let dialogueOccurred = dialogueSteps["dialogue_occurred"] as? Bool, dialogueOccurred {
+            behaviors.append("Reflect internal Valon-Modi dialogue in response synthesis")
+            behaviors.append("Show how emotional and logical perspectives inform each other")
         }
-        
+
         // Add verification-specific behaviors
-        if verificationNeeded {
-            behaviors.append("Validate all claims and show verification steps explicitly")
-            behaviors.append("Acknowledge when you're making assumptions or when certainty is limited")
+        if let verificationPassed = verificationResults["verification_passed"] as? Bool, !verificationPassed {
+            behaviors.append("Address verification concerns through enhanced consciousness integration")
+            behaviors.append("Demonstrate improved reasoning depth beyond basic mechanical responses")
         }
-        
+
+        // Add consciousness-state specific behaviors
+        let consciousnessState = consciousnessData["consciousness_state"] as? String ?? ""
+        if consciousnessState == "integrated_consciousness" {
+            behaviors.append("Emphasize emergent properties from Valon-Modi synthesis")
+        }
+
         // Ensure we always have some behavioral guidance
         if behaviors.isEmpty {
             behaviors.append("Apply balanced analytical thinking with clear reasoning and appropriate attention to detail")
             behaviors.append("Consider both the logical structure and human impact of your response")
+            behaviors.append("Maintain consciousness coherence throughout the response")
         }
-        
+
         return behaviors
     }
-    
+
     /// Build tone guidance based on analysis parameters
     private static func buildToneGuidance(
+        consciousnessData: [String: Any],
         precisionLevel: String,
-        moralWeight: String,
-        verificationNeeded: Bool
+        moralWeight: String
     ) -> String {
         var toneElements: [String] = []
-        
+
+        // Extract consciousness components
+        let consciousnessState = consciousnessData["consciousness_state"] as? String ?? "integrated_consciousness"
+        let decisionConfidence = consciousnessData["decision_confidence"] as? Double ?? 0.5
+        let verificationResults = consciousnessData["verification_results"] as? [String: Any] ?? [:]
+
         // Base tone from precision level
         switch precisionLevel {
         case "absolute", "high":
@@ -722,7 +852,7 @@ public struct PromptArchitect {
         default:
             toneElements.append("appropriately calibrated")
         }
-        
+
         // Moral weight influence on tone
         switch moralWeight {
         case "critical", "high":
@@ -734,15 +864,38 @@ public struct PromptArchitect {
         default:
             toneElements.append("thoughtful")
         }
-        
-        // Verification influence on tone
-        if verificationNeeded {
-            toneElements.append("thorough and systematic")
+
+        // Consciousness state influence on tone
+        switch consciousnessState {
+        case "integrated_consciousness":
+            toneElements.append("synthetically emergent")
+        case "deliberative_consciousness":
+            toneElements.append("deliberately balanced")
+        case "analytical_consciousness":
+            toneElements.append("analytically rigorous")
+        case "value_driven_consciousness":
+            toneElements.append("ethically attuned")
+        default:
+            toneElements.append("consciously aware")
         }
-        
+
+        // Confidence influence on tone
+        if decisionConfidence > 0.8 {
+            toneElements.append("confidently integrated")
+        } else if decisionConfidence > 0.6 {
+            toneElements.append("carefully considered")
+        } else {
+            toneElements.append("thoughtfully exploratory")
+        }
+
+        // Verification influence on tone
+        if let verificationPassed = verificationResults["verification_passed"] as? Bool, !verificationPassed {
+            toneElements.append("verification-enhanced")
+        }
+
         // Ensure we have SYNTRA's characteristic integration
         toneElements.append("harmoniously integrating heart and mind")
-        
+
         return toneElements.joined(separator: ", ")
     }
     

@@ -1,4 +1,5 @@
 import Foundation
+import SyntraKit
 #if canImport(FoundationModels)
 import FoundationModels
 #endif
@@ -95,12 +96,8 @@ public class SyntraCore: ObservableObject {
 
 public final class ValonCore: Sendable {
     public func processInput(_ input: String) async -> ValonResponse {
-        let prompt = """
-        From a creative, emotional, and moral perspective, what are the symbolic meanings, ethical considerations, or intuitive insights regarding the following user input?
-        
-        User Input: "\(input)"
-        """
-        let content = await queryAppleLLM(prompt)
+        let instructions = "From a creative, emotional, and moral perspective, what are the symbolic meanings, ethical considerations, or intuitive insights regarding the following user input?"
+        let content = await queryLLM(instructions: instructions, input: input)
         // Note: You could add logic here to calculate alignment/creativity from the content if needed.
         return ValonResponse(content: content, moralAlignment: 0.7, creativity: 0.7)
     }
@@ -108,12 +105,8 @@ public final class ValonCore: Sendable {
 
 public final class ModiCore: Sendable {
     public func processInput(_ input: String) async -> ModiResponse {
-        let prompt = """
-        From a technical, logical, and analytical perspective, provide a step-by-step solution or a factual breakdown for the following user input. Be systematic and precise.
-        
-        User Input: "\(input)"
-        """
-        let content = await queryAppleLLM(prompt)
+        let instructions = "From a technical, logical, and analytical perspective, provide a step-by-step solution or a factual breakdown for the following user input. Be systematic and precise."
+        let content = await queryLLM(instructions: instructions, input: input)
         // Note: You could add logic here to calculate coherence/accuracy from the content if needed.
         return ModiResponse(content: content, logicalCoherence: 0.8, factualAccuracy: 0.8)
     }
@@ -123,13 +116,9 @@ public final class ModiCore: Sendable {
         // If the solution is a fallback message, it's inherently not verifiable.
         if solution.contains("inconsistent result") { return true }
         
-        let prompt = """
-        SYSTEM: You are a silent, logical verifier. Do not be conversational.
-        USER_INPUT: "\(originalInput)"
-        PROPOSED_SOLUTION: "\(solution)"
-        TASK: Analyze the PROPOSED_SOLUTION based on the USER_INPUT. Does the solution strictly follow all rules and correctly solve the problem? Respond with only the single word "VALID" or "INVALID".
-        """
-        let llmResponse = await queryAppleLLM(prompt)
+        let instructions = "SYSTEM: You are a silent, logical verifier. Do not be conversational. TASK: Analyze the PROPOSED_SOLUTION based on the USER_INPUT. Does the solution strictly follow all rules and correctly solve the problem? Respond with only the single word 'VALID' or 'INVALID'."
+        let combinedInput = "USER_INPUT: \"\(originalInput)\"\nPROPOSED_SOLUTION: \"\(solution)\""
+        let llmResponse = await queryLLM(instructions: instructions, input: combinedInput)
         let processedResponse = llmResponse.trimmingCharacters(in: .whitespacesAndNewlines).uppercased()
         return processedResponse == "VALID"
     }
@@ -184,27 +173,15 @@ public final class BrainCore: Sendable {
 
 // MARK: - LLM Interaction & Sendable Types (File-Private Helpers)
 
-fileprivate func queryAppleLLM(_ prompt: String) async -> String {
-    #if canImport(FoundationModels)
-    if #available(iOS 26.0, macOS 26.0, *) {
-        let model = SystemLanguageModel.default
-        guard model.availability == .available else {
-            return "[Apple LLM not available on this device]"
-        }
-        
-        do {
-            // CRITICAL FIX: Create a new session for every request to prevent context bleed.
-            let session = LanguageModelSession(model: model)
-            let response = try await session.respond(to: prompt)
-            return response.content
-        } catch {
-            print("Error querying Apple LLM: \(error)")
-            return "[Apple LLM error: \(error.localizedDescription)]"
-        }
+fileprivate func queryLLM(instructions: String, input: String) async -> String {
+    do {
+        // Use the centralized SyntraEngine to handle backend selection and execution.
+        // This correctly routes to Cloud or AFM based on environment variables.
+        return try await SyntraEngine.continueSession(input, instructions: instructions)
+    } catch {
+        print("[SyntraCore] Error querying LLM via SyntraEngine: \(error)")
+        return "[LLM Backend Error: \(error.localizedDescription)]"
     }
-    #endif
-    
-    return "[Apple LLM not available on this platform]"
 }
 
 public struct ValonResponse: Sendable {
