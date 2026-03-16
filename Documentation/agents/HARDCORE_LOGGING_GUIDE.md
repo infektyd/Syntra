@@ -34,7 +34,7 @@ Documents/syntra_consciousness_logs.txt
 1. Open **Files** app on your iPhone
 2. Navigate to **On My iPhone** → **SyntraChatIOS**  
 3. Find `syntra_consciousness_logs.txt`
-4. Tap to view comprehensive processing logs
+4. Tap to view detailed processing logs
 
 ### **Log File Contents Example**
 ```
@@ -58,7 +58,7 @@ Documents/syntra_consciousness_logs.txt
 2. Open **Console.app**  
 3. Select your iPhone in sidebar
 4. Filter by **"com.syntra.ios"** or **"SyntraChatIOS"**
-5. See real-time system-level logs
+5. See  system-level logs
 
 ### **Terminal Access (Mac Connected)**
 ```bash

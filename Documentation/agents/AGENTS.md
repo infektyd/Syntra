@@ -83,7 +83,7 @@ let response = try await session.generateResponse(prompt)
 
 ## Real-Time Logging Architecture (NEW)
 
-SYNTRA now includes comprehensive real-time backend visibility through an integrated logging system.
+SYNTRA now includes detailed  backend visibility through an integrated logging system.
 
 ### **Enhanced SyntraLogger System**
 ```swift
@@ -124,7 +124,7 @@ SyntraLogger.logUI("User initiated voice input")
 
 ### **iOS App Architecture**
 ```swift
-// TabView with comprehensive functionality
+// TabView with detailed functionality
 TabView {
     // Main consciousness interface
     ChatView()

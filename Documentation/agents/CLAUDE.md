@@ -88,7 +88,7 @@ SyntraLogger.logUI("User interaction logged", details: "Chat input submitted")
 ```
 
 ### **LogViewerView Features**
-- **Real-time streaming**: Logs appear instantly during processing
+- **Real-time streaming**: Logs appear immediately during processing
 - **Search & filter**: Find specific activities by text/category
 - **Export capability**: Share logs for debugging/analysis
 - **Color-coded levels**: Visual distinction for log importance
@@ -175,7 +175,7 @@ swift build --target SyntraSwift
 ## iOS 26 Beta 4 Crisis (UPDATED July 2025)
 
 ### **CRITICAL: Beta 4 Made Things WORSE**
-According to comprehensive developer community reports, iOS 26 Beta 4 introduced significant new problems:
+According to detailed developer community reports, iOS 26 Beta 4 introduced significant new problems:
 
 - **Liquid Glass became LESS readable** than Beta 3
 - **Apple undid legibility improvements** from previous betas
@@ -184,7 +184,7 @@ According to comprehensive developer community reports, iOS 26 Beta 4 introduced
 - **Potential new threading violations** in the glass rendering pipeline
 
 ### **Developer Community Response**
-- **Marco Arment**: *"iOS 26 is still so rough, and so buggy, that it's not going to make its ship date without massive quality and design sacrifices."*
+- **Marco Arment**: *"iOS 26 is still so rough, and so buggy, that it's not going to make its ship date without large quality and design sacrifices."*
 - **Federico Viticci**: *"I'm feeling the same sense of dread about iOS 26 as I did with Stage Manager in iPadOS 16."*
 - **Steve Troughton-Smith**: *"We have about six weeks to go until new iPhones... honestly right now I don't see how they can land this plane."*
 

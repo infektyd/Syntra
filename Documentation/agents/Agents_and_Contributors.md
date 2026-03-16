@@ -6,7 +6,7 @@
 
 **Last Updated: August 15, 2025**
 
-This comprehensive guide combines all key documentation for SYNTRA Foundation, including project vision, architecture, rules, development guidelines, logging, troubleshooting, and contributor standards. It supersedes previous separate files (e.g., AGENTS_AND_CONTRIBUTORS.md, HARDCORE_LOGGING_GUIDE.md, Rules.md, AGENTS.md, CLAUDE.md). All agents, contributors, and AI tools must follow this guide.
+This detailed guide combines all key documentation for SYNTRA Foundation, including project vision, architecture, rules, development guidelines, logging, troubleshooting, and contributor standards. It supersedes previous separate files (e.g., AGENTS_AND_CONTRIBUTORS.md, HARDCORE_LOGGING_GUIDE.md, Rules.md, AGENTS.md, CLAUDE.md). All agents, contributors, and AI tools must follow this guide.
 
 ## Project Vision & Guiding Architecture
 
@@ -21,7 +21,7 @@ _The moral framework and three-brain design are the project’s inviolable heart
 ### What Makes SYNTRA Unique
 - **Consciousness-first architecture** (not just chatbot logic) with atomic concurrency tracking.
 - **Moral drift monitoring** with thread-safe 70/30 ratio enforcement and quantitative scoring.
-- **FoundationModels integration**—Swift `@Generable`, `@Guide`, and real-time Apple LLMs.
+- **FoundationModels integration**—Swift `@Generable`, `@Guide`, and integrated Apple LLMs.
 - **Voice/PTT**: Unified iOS/macOS voice, Push-to-Talk, ElevenLabs integration.
 - **Full-stack, cross-platform** via Apple ecosystem, modular Python-Swift bridge.
 - **Auditability**: Every cognitive decision logged, reviewed, and inspectable.
@@ -33,7 +33,7 @@ _The moral framework and three-brain design are the project’s inviolable heart
 - **One source of truth**: "main" is always deployable; no long-lived drifty branches.
 - **Atomic commits ONLY**: Each commit is *one logical change*. Do NOT batch unrelated features/fixes.
 - **Prefer real implementation to stubbing**: Any code marked with a stub must be re-addressed and removed as soon as a solution is viable. If all else fails, flag it and seek help for in-depth search.
-- **Default to ‘live binding’**: When designing UI, config toggles, or session logic, controls change values/behavior instantly and update agents in-memory, not via rebuilds.
+- **Default to ‘live binding’**: When designing UI, config toggles, or session logic, controls change values/behavior immediately and update agents in-memory, not via rebuilds.
 - **Document decisions**: All architectural/design decisions (including those by AI tools) must be documented in a codex report or markdown in the repo. Major changes with no clear justification should be reverted.
 - **Fully plumb configs**: New toggles or config options added to SyntraConfig must be fully plumbed from UI → config file → runtime agent logic. All dangling/no-op config UI is forbidden.
 - **Use real data in demos**: Sample chat interfaces or agent demos must run actual Valon/Modi/Core logic—not hardcoded or faked responses—unless dependencies make this absolutely impossible, and that impossibility is logged.
@@ -142,7 +142,7 @@ memory_vault/*.json
 4. Tag stable releases for review/deploy.
 
 ## Real-Time Logging Architecture
-SYNTRA includes comprehensive real-time logging for deep debugging and consciousness analysis.
+SYNTRA includes detailed  logging for deep debugging and consciousness analysis.
 
 ### How to Access Logs
 - **Xcode Console (Debugging)**: View while app is running (e.g., [INFO] logs for processing).
@@ -232,7 +232,7 @@ let response = try await session.respond(to: "Prompt")
 ### Consciousness Preservation
 - Full three-brain integration.
 - Moral framework immutable.
-- Real-time processing optimized for mobile.
+- Real-time processing  for mobile.
 
 ## Known Platform & IDE Quirks
 - **macOS 26 Beta Issues**: SwiftUI input regressions—use NSTextField bridges. Monitor for Beta 4 fixes (worsened legibility reported).
@@ -266,7 +266,7 @@ grep -r "@MainActor" .
 4. Build: `xcodebuild -project SyntraChatIOS.xcodeproj -scheme SyntraChatIOS -sdk iphonesimulator build`.
 
 ## Current Development Status (August 2025)
-- **Completed**: Foundation Models integration, iOS app, real-time logging, Swift 6 compliance, builds across platforms.
+- **Completed**: Foundation Models integration, iOS app,  logging, Swift 6 compliance, builds across platforms.
 - **Active Features**: Three-brain processing, backend monitoring, offline-first sync.
 - **No Regression Policy**: Never delete code; preserve all integrations; document changes; use documented API patterns.
 

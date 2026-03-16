@@ -66,7 +66,7 @@ The SYNTRA three-brain consciousness system (70% Valon, 30% Modi) cannot receive
 ```swift
 @MainActor
 public struct SyntraThreadSafeTextInput: View {
-    // All operations guaranteed to run on main thread
+    // All operations required to run on main thread
 }
 ```
 

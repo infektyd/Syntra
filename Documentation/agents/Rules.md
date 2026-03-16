@@ -15,7 +15,7 @@ Project Rule 1:
 
 Project Rule 2:
 
-“When designing UI, config toggles, or session logic, default to ‘live binding’—controls change values/behavior instantly and update agents in-memory, not via rebuilds.”
+“When designing UI, config toggles, or session logic, default to ‘live binding’—controls change values/behavior immediately and update agents in-memory, not via rebuilds.”
 
 Project Rule 3:
 

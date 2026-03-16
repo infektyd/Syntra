@@ -3,7 +3,7 @@
 ## Coding Standards
 
 - Adhere to Swift API Design Guidelines
-- Use meaningful names and comprehensive documentation
+- Use meaningful names and detailed documentation
 - Maintain consistent formatting with SwiftFormat
 - Write unit tests for all new functionality
 
